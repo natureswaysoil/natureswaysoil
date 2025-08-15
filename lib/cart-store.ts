@@ -1,5 +1,4 @@
-// lib/cart-store.ts
-import type { CartItem } from "./cart";
+import type { CartItem } from "@/lib/cart";
 
 const KEY = "nws_cart";
 const EVT = "nws:cart-changed";
