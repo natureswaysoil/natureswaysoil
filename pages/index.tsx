@@ -1,26 +1,36 @@
-// pages/index.tsx
-import React, { useEffect, useMemo, useState } from "react";
-import Head from "next/head";
-import { PRODUCTS, type Product } from "../data/products";
-import Cart, { type CartItem } from "../components/Cart";
-import ChatWidget from "../components/ChatWidget";
+import { PRODUCTS, type Product } from "../data/products"; // or "./data/products" if you kept it inside /pages
+import Cart, { type CartItem } from "../components/Cart";   // or "./components/Cart" if components live under /pages
 
-export default function Home() {
-  const [cartOpen, setCartOpen] = useState(false);
-  const [items, setItems] = useState<CartItem[]>([]);
-  const [promo, setPromo] = useState<string | undefined>(undefined);
+const [items, setItems] = useState<CartItem[]>([]);
+const [cartOpen, setCartOpen] = useState(false);
+function addToCart(p: Product) {
+  setItems((prev) => {
+    const idx = prev.findIndex((i) => i.id === p.id);
+    const copy = [...prev];
 
-  // Read promo from URL (?pc=CODE or ?promo=CODE)
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const params = new URLSearchParams(window.location.search);
-    const pc = params.get("pc") || params.get("promo") || undefined;
-    setPromo(pc || undefined);
-  }, []);
+    if (idx >= 0) {
+      copy[idx] = { ...copy[idx], qty: copy[idx].qty + 1 };
+    } else {
+      copy.push({ id: p.id, name: p.name, price: p.price, qty: 1 });
+    }
 
-  function addToCart(p: Product) {
-    setItems((prev) => {
-      const idx = prev.findIndex((i) => i.id === p.id);
-      if (idx >= 0) {
+    return copy; // ← REQUIRED
+  });
 
-::contentReference[oaicite:0]{index=0}
+  setCartOpen(true);
+}
+
+function updateQty(id: string, qty: number) {
+  setItems((prev) =>
+    prev.map((i) => (i.id === id ? { ...i, qty: Math.max(1, qty) } : i))
+  ); // ← callback returns CartItem[]
+}
+
+function remove(id: string) {
+  setItems((prev) => prev.filter((i) => i.id !== id)); // ← returns CartItem[]
+}
+
+const subtotal = useMemo(
+  () => items.reduce((sum, i) => sum + i.price * i.qty, 0),
+  [items]
+);
