@@ -2,7 +2,13 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import Stripe from "stripe";
 export const config = { api: { bodyParser: false } };
+// before
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, { apiVersion: "2024-06-20" });
+
+// after
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, { apiVersion: "2024-04-10" });
+
+
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse){
   const sig = req.headers["stripe-signature"] as string;
