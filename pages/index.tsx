@@ -124,3 +124,9 @@ const styles: Record<string, React.CSSProperties> = {
   footer: { textAlign: "center", padding: 24, borderTop: "1px solid #eee", marginTop: 24 }
 };
 
+import HeaderCart from "../components/HeaderCart";
+// ...
+<nav className="hidden md:flex items-center gap-6 text-sm">
+  {/* ...your links... */}
+  <HeaderCart />
+</nav>
