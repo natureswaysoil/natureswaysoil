@@ -8,8 +8,7 @@ import ChatWidget from "../components/ChatWidget";           // if you use it in
 const [items, setItems] = useState<CartItem[]>([]);
 const [cartOpen, setCartOpen] = useState(false);
 
-const [items, setItems] = useState<CartItem[]>([]);
-const [cartOpen, setCartOpen] = useState(false);
+
 function addToCart(p: Product) {
   setItems((prev) => {
     const idx = prev.findIndex((i) => i.id === p.id);
