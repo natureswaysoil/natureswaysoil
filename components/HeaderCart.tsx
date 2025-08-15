@@ -2,7 +2,7 @@
 'use client';
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import { cartCount, onCartChange } from "../lib/cart-store";
+import { cartCount, onCartChange } from "@/lib/cart-store";
 
 export default function HeaderCart() {
   const router = useRouter();
@@ -29,3 +29,4 @@ export default function HeaderCart() {
     </button>
   );
 }
+
