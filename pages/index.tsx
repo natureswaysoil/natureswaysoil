@@ -1,132 +1,188 @@
 // /pages/index.tsx
 import Head from "next/head";
-import { useEffect, useMemo, useState } from "react";
-import products from "../data/products";
-
-type CartLine = { sku: string; name: string; price: number; qty: number; image?: string };
+import Image from "next/image";
+import Link from "next/link";
+import { useState } from "react";
+import { useRouter } from "next/router";
+import HeaderCart from "@/components/HeaderCart";
+import { products } from "@/lib/products";
 
 export default function Home() {
-  const active = useMemo(() => products.filter(p => p.status === "active"), []);
-  const [cart, setCart] = useState<CartLine[]>([]);
+  const router = useRouter();
+  const [status, setStatus] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  // Load cart from localStorage (client only)
-  useEffect(() => {
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setLoading(true);
+    setStatus(null);
+
+    const form = e.currentTarget;
+    const data = Object.fromEntries(new FormData(form).entries());
+
     try {
-      const raw = localStorage.getItem("cart");
-      if (raw) setCart(JSON.parse(raw));
-    } catch {}
-  }, []);
-
-  // Save cart
-  useEffect(() => {
-    try {
-      localStorage.setItem("cart", JSON.stringify(cart));
-    } catch {}
-  }, [cart]);
-
-  const addToCart = (sku: string) => {
-    const p = active.find(x => x.sku === sku);
-    if (!p) return;
-    setCart(prev => {
-      const i = prev.findIndex(l => l.sku === sku);
-      if (i >= 0) {
-        const next = [...prev];
-        next[i] = { ...next[i], qty: next[i].qty + 1 };
-        return next;
+      const r = await fetch("/api/lead", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ source: "newsletter", ...data }),
+      });
+      if (r.ok) {
+        setStatus("Thanks! You’re on the list.");
+        (form as any).reset();
+      } else {
+        setStatus("Hmm, something went wrong. Please try again.");
       }
-      return [...prev, { sku: p.sku, name: p.name, price: p.price, qty: 1, image: p.image }];
-    });
-  };
+    } catch {
+      setStatus("Hmm, something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
-  const total = cart.reduce((s, l) => s + l.price * l.qty, 0);
+  const featured = products.slice(0, 6); // show first 6 products
 
   return (
-    <>
+    <main className="min-h-screen bg-white text-gray-900">
       <Head>
-        <title>Nature&apos;s Way Soil | Organic Mixes & Amendments</title>
-        <meta name="description" content="Premium organic soils, compost, biochar, and earth-friendly amendments." />
+        <title>Nature’s Way Soil – Pet-Safe Lawn & Garden</title>
+        <meta
+          name="description"
+          content="Family-crafted, microbe-rich lawn and garden products. Pet-safe, biochar boosted, and FBM-shipped fast."
+        />
+        <link rel="canonical" href="https://natureswaysoil.com/" />
       </Head>
 
-      <header style={styles.header}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <img src="/logo.png" alt="Nature's Way Soil" style={{ height: 40 }} />
-          <h1 style={{ margin: 0 }}>Nature&apos;s Way Soil</h1>
+      {/* Header */}
+      <header className="sticky top-0 z-30 bg-white/90 backdrop-blur border-b">
+        <div className="max-w-7xl mx-auto h-16 px-6 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-3">
+            <div className="relative w-36 h-10">
+              <Image
+                src="/images/logo-with-tagline.png"
+                alt="Nature’s Way Soil"
+                fill
+                className="object-contain"
+                priority
+              />
+            </div>
+          </Link>
+          <nav className="hidden md:flex items-center gap-6 text-sm">
+            <Link href="/products" className="hover:text-green-700">Products</Link>
+            <Link href="/about" className="hover:text-green-700">About</Link>
+            <Link href="/contact" className="hover:text-green-700">Contact</Link>
+            <HeaderCart />
+          </nav>
+          <div className="md:hidden">
+            <HeaderCart />
+          </div>
         </div>
-        <a href="/cart" style={styles.cartLink} aria-label="Cart">
-          🛒 <span style={{ marginLeft: 6 }}>{cart.reduce((s, l) => s + l.qty, 0)} items</span>
-          <span style={{ marginLeft: 8 }}>${total.toFixed(2)}</span>
-        </a>
       </header>
 
-      <main style={styles.main}>
-        <section style={styles.hero}>
+      {/* Hero */}
+      <section className="max-w-7xl mx-auto px-6 py-16 grid md:grid-cols-2 gap-10 items-center">
+        <div>
+          <h1 className="text-4xl md:text-5xl font-extrabold leading-tight">
+            Pet-safe products that bring tired lawns & gardens back to life.
+          </h1>
+          <p className="mt-4 text-lg text-gray-700">
+            Microbe-rich blends with BM-1, worm castings, and activated biochar. If you’re not happy,
+            we’ll refund you — <span className="font-semibold">no return required</span>.
+          </p>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Link
+              href="/products"
+              className="px-6 py-3 rounded-2xl bg-green-700 text-white"
+            >
+              Shop products
+            </Link>
+            <Link
+              href="/about"
+              className="px-6 py-3 rounded-2xl border"
+            >
+              Learn more
+            </Link>
+          </div>
+          <p className="mt-3 text-sm text-gray-600">
+            FBM flat-rate shipping: 32oz $7 · 1 gal $10 · 2.5 gal $30
+          </p>
+        </div>
+        <div className="rounded-2xl border p-4">
+          {/* Drop your educational video link here (YouTube/Vimeo embed). Example: */}
+          <div className="aspect-video rounded-xl overflow-hidden bg-gray-100 flex items-center justify-center">
+            <span className="text-gray-500 text-sm">Your educational video goes here</span>
+          </div>
+          <p className="mt-3 text-sm text-gray-600">
+            Tip: end the video with “If you’d like to learn more, visit natureswaysoil.com.”
+          </p>
+        </div>
+      </section>
+
+      {/* Features */}
+      <section className="max-w-7xl mx-auto px-6 grid md:grid-cols-3 gap-6">
+        {[
+          { t: "Family-crafted", d: "Small batches for quality and consistency." },
+          { t: "Microbe-rich", d: "BM-1 microbes + castings to unlock nutrients." },
+          { t: "Biochar boosted", d: "Activated biochar improves nutrient retention." },
+        ].map((f, i) => (
+          <div key={i} className="border rounded-2xl p-6">
+            <h3 className="font-semibold">{f.t}</h3>
+            <p className="mt-2 text-gray-700 text-sm">{f.d}</p>
+          </div>
+        ))}
+      </section>
+
+      {/* Featured products */}
+      <section className="max-w-7xl mx-auto px-6 py-14">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold">Featured products</h2>
+          <Link href="/products" className="text-green-700">View all →</Link>
+        </div>
+
+        <div className="mt-6 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {featured.map((p) => (
+            <div key={p.slug} className="border rounded-2xl p-5 hover:shadow-md">
+              <h3 className="font-semibold">{p.title}</h3>
+              <p className="mt-1 text-gray-700">${p.price.toFixed(2)}</p>
+              <div className="mt-4 flex gap-2">
+                <button
+                  onClick={() => router.push(`/checkout?slug=${p.slug}&qty=1`)}
+                  className="px-4 py-2 rounded-xl bg-green-700 text-white"
+                >
+                  Buy
+                </button>
+                <Link href={`/products/${p.slug}`} className="px-4 py-2 rounded-xl border">
+                  View
+                </Link>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Newsletter / lead capture */}
+      <section className="max-w-7xl mx-auto px-6 pb-16">
+        <div className="rounded-2xl border p-6 md:p-8">
+          <h3 className="text-xl font-semibold">Get tips & seasonal lawn care reminders</h3>
+          <p className="mt-1 text-gray-700 text-sm">We’ll send occasional updates. Unsubscribe anytime.</p>
+          <form onSubmit={onSubmit} className="mt-4 grid md:grid-cols-4 gap-3">
+            <input name="name" placeholder="Your name" className="border rounded-xl px-3 py-2 md:col-span-1" />
+            <input name="email" type="email" required placeholder="you@email.com" className="border rounded-xl px-3 py-2 md:col-span-2" />
+            <button disabled={loading} className="px-5 py-2 rounded-2xl bg-green-700 text-white md:col-span-1">
+              {loading ? "Submitting…" : "Subscribe"}
+            </button>
+          </form>
+          {status && <p className="mt-3 text-green-700 text-sm">{status}</p>}
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t">
+        <div className="max-w-7xl mx-auto px-6 py-10 grid md:grid-cols-3 gap-8 text-sm">
           <div>
-            <h2 style={{ fontSize: 28, margin: "0 0 8px" }}>Premium Organic Soil & Amendments</h2>
-            <p style={{ margin: 0 }}>
-              Sustainably sourced, biochar-enriched, and powered by worm castings & mycorrhizae.
+            <div className="relative w-36 h-9">
+              <Image src="/images/logo-with-tagline.png" alt="Nature’s Way Soil" fill className="object-contain" />
+            </div>
+            <p className="mt-3 text-gray-600">
+              Safe for families, pets, and pollinators when used as directed.
             </p>
-          </div>
-          <img src="/hero.jpg" alt="" style={{ maxHeight: 160, borderRadius: 12, objectFit: "cover" }} />
-        </section>
 
-        <section>
-          <h3 style={{ margin: "24px 0 12px" }}>Shop</h3>
-          <div style={styles.grid}>
-            {active.map(p => (
-              <article key={p.sku} style={styles.card}>
-                <div style={{ width: "100%", paddingTop: "75%", position: "relative", background: "#f7f7f7" }}>
-                  <img
-                    src={p.image}
-                    alt={p.title || p.name}
-                    style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }}
-                  />
-                </div>
-                <div style={{ padding: 12 }}>
-                  <h4 style={{ margin: "0 0 6px", fontSize: 16 }}>{p.name}</h4>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <strong>${p.price.toFixed(2)}</strong>
-                    <button onClick={() => addToCart(p.sku)} style={styles.button} aria-label={`Add ${p.name} to cart`}>
-                      Add to Cart
-                    </button>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-      </main>
-
-      <footer style={styles.footer}>
-        <small>© {new Date().getFullYear()} Nature&apos;s Way Soil • <a href="https://natureswaysoil.com">natureswaysoil.com</a></small>
-      </footer>
-    </>
-  );
-}
-
-const styles: Record<string, React.CSSProperties> = {
-  header: {
-    display: "flex", justifyContent: "space-between", alignItems: "center",
-    padding: "12px 16px", borderBottom: "1px solid #eee", position: "sticky", top: 0, background: "#fff", zIndex: 10
-  },
-  cartLink: { textDecoration: "none", display: "flex", alignItems: "center", fontWeight: 600 },
-  main: { maxWidth: 1100, margin: "0 auto", padding: "16px" },
-  hero: {
-    display: "flex", justifyContent: "space-between", alignItems: "center",
-    padding: 16, borderRadius: 12, background: "#f3faf5", border: "1px solid #e0efe6", gap: 16
-  },
-  grid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
-    gap: 16
-  },
-  card: { border: "1px solid #eee", borderRadius: 12, overflow: "hidden", background: "#fff" },
-  button: { padding: "6px 10px", borderRadius: 8, border: "1px solid #0a7b34", background: "#10a344", color: "#fff", cursor: "pointer" },
-  footer: { textAlign: "center", padding: 24, borderTop: "1px solid #eee", marginTop: 24 }
-};
-
-import HeaderCart from "../components/HeaderCart";
-// ...
-<nav className="hidden md:flex items-center gap-6 text-sm">
-  {/* ...your links... */}
-  <HeaderCart />
-</nav>
