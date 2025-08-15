@@ -1,13 +1,14 @@
-'use client';
+"use client";
 import { useEffect, useState } from "react";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements, PaymentElement, useElements, useStripe, AddressElement } from "@stripe/react-stripe-js";
 import { calculate, Cart } from "../lib/cart";
 import { getProduct } from "../lib/products";
+import { readCart, clearCart } from "../lib/cart-store";
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY as string);
 
-function Inner({ initialCart }: { initialCart: Cart }) {
+function InnerCheckout({ initialCart }: { initialCart: Cart }) {
   const stripe = useStripe();
   const elements = useElements();
   const [cart, setCart] = useState<Cart>(calculate(initialCart));
@@ -36,6 +37,7 @@ function Inner({ initialCart }: { initialCart: Cart }) {
       confirmParams: { return_url: `${window.location.origin}/success`, receipt_email: email || undefined }
     });
     if (error) setErr(error.message || "Payment error");
+    else clearCart(); // clear local cart on successful confirmation/redirect
     setLoading(false);
   }
 
@@ -44,8 +46,12 @@ function Inner({ initialCart }: { initialCart: Cart }) {
       <div className="md:col-span-3 space-y-6">
         <div className="p-5 border rounded-2xl">
           <h3 className="font-semibold">Contact</h3>
-          <input className="mt-3 w-full border rounded-xl px-3 py-2" placeholder="Email for receipt"
-                 value={email} onChange={(e) => setEmail(e.target.value)} />
+          <input
+            placeholder="Email for receipt"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="mt-3 w-full border rounded-xl px-3 py-2"
+          />
         </div>
         <div className="p-5 border rounded-2xl">
           <h3 className="font-semibold">Billing & Shipping</h3>
@@ -53,7 +59,7 @@ function Inner({ initialCart }: { initialCart: Cart }) {
         </div>
         <div className="p-5 border rounded-2xl">
           <h3 className="font-semibold">Payment</h3>
-          <div className="mt-3">{/* Elements will mount here */}<PaymentElement /></div>
+          <div className="mt-3"><PaymentElement /></div>
           {err && <p className="text-red-600 text-sm mt-3">{err}</p>}
           <button onClick={pay} disabled={loading || !stripe} className="mt-4 px-6 py-3 rounded-2xl bg-green-700 text-white">
             {loading ? "Processing..." : "Pay now"}
@@ -83,9 +89,16 @@ function Inner({ initialCart }: { initialCart: Cart }) {
 
 export default function CheckoutForm({ slug, qty }: { slug?: string; qty?: number }) {
   const item = slug ? getProduct(slug) : null;
-  const initialCart: Cart = {
-    items: item ? [{ slug: item.slug, title: item.title, price: item.price, qty: qty || 1, sku: item.sku }] : [],
-    shipping: 0, tax: 0, subtotal: 0, total: 0
-  };
-  return (<Elements stripe={stripePromise}><Inner initialCart={initialCart} /></Elements>);
+  // If a slug is provided, build from that; otherwise use local cart
+  const items = item
+    ? [{ slug: item.slug, title: item.title, price: item.price, qty: qty || 1, sku: item.sku }]
+    : readCart();
+
+  const initialCart: Cart = { items, shipping: 0, tax: 0, subtotal: 0, total: 0 };
+  return (
+    <Elements stripe={stripePromise}>
+      <InnerCheckout initialCart={initialCart} />
+    </Elements>
+  );
 }
+
