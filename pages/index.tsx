@@ -7,8 +7,6 @@ import Cart, { type CartItem } from "../components/Cart";    // correct with /co
 import ChatWidget from "../components/ChatWidget";           // if you use it in the JSX
 const [items, setItems] = useState<CartItem[]>([]);
 const [cartOpen, setCartOpen] = useState(false);
-import { PRODUCTS, type Product } from "../data/products"; // or "./data/products" if you kept it inside /pages
-import Cart, { type CartItem } from "../components/Cart";   // or "./components/Cart" if components live under /pages
 
 const [items, setItems] = useState<CartItem[]>([]);
 const [cartOpen, setCartOpen] = useState(false);
