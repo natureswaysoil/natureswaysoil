@@ -1,40 +1,30 @@
 // pages/api/stripe/create-intent.ts
 import type { NextApiRequest, NextApiResponse } from "next";
 import Stripe from "stripe";
-// relative import so it works even without path aliases:
-import { calculate } from "../../../lib/cart";
+import { calculate } from "@/lib/cart";
 
 const secret = process.env.STRIPE_SECRET_KEY || "";
-// Use a version your Stripe types accept, or omit the version entirely:
-const stripe = new Stripe(secret, { apiVersion: "2024-04-10" });
+const stripe = new Stripe(secret, { apiVersion: "2024-04-10" }); // or: new Stripe(secret)
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse){
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
   if (!secret) return res.status(500).json({ error: "Stripe not configured" });
 
-  try {
+  try{
     const { cart } = req.body || {};
-    if (!cart || !cart.items || !cart.items.length) {
-      return res.status(400).json({ error: "Cart is empty" });
-    }
-
-    const computed = calculate(cart);                   // FBM shipping math
-    const amount = Math.round(computed.total * 100);    // cents
+    if (!cart || !cart.items || !cart.items.length) return res.status(400).json({ error: "Cart is empty" });
+    const computed = calculate(cart);
+    const amount = Math.round(computed.total * 100);
 
     const intent = await stripe.paymentIntents.create({
-      amount,
-      currency: "usd",
+      amount, currency: "usd",
       automatic_payment_methods: { enabled: true },
-      metadata: {
-        source: "nws_site",
-        items: JSON.stringify(cart.items),
-        shipping_flat: String(computed.shipping),
-      },
+      metadata: { source: "nws_site", items: JSON.stringify(cart.items), shipping_flat: String(computed.shipping) }
     });
 
-    return res.json({ clientSecret: intent.client_secret });
-  } catch (err: any) {
-    console.error(err);
-    return res.status(500).json({ error: err.message || "Stripe error" });
+    res.json({ clientSecret: intent.client_secret });
+  } catch(err:any){
+    res.status(500).json({ error: err.message || "Stripe error" });
   }
 }
+
