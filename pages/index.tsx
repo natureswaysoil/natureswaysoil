@@ -1,253 +1,126 @@
-// pages/index.tsx
-import * as React from "react";
+// /pages/index.tsx
 import Head from "next/head";
+import { useEffect, useMemo, useState } from "react";
+import products from "../data/products";
 
-// Data & types
-import { PRODUCTS, type Product } from "../data/products";
-
-// UI
-import Cart, { type CartItem } from "../components/Cart";
-import ChatWidget from "../components/ChatWidget";
-
-/**
- * Helper: convert our CartItem -> Stripe line item.
- * - If id looks like a Stripe Price id (starts with "price_"), we pass { price, quantity }.
- * - Otherwise we create inline price_data with the local name + unit_amount.
- */
-function toStripeLineItem(i: CartItem) {
-  if (i.id.startsWith("price_")) {
-    return { price: i.id, quantity: i.qty };
-  }
-  return {
-    price_data: {
-      currency: "USD",
-      unit_amount: i.price, // cents
-      product_data: { name: i.name },
-    },
-    quantity: i.qty,
-  };
-}
+type CartLine = { sku: string; name: string; price: number; qty: number; image?: string };
 
 export default function Home() {
-  const [items, setItems] = React.useState<CartItem[]>([]);
-  const [cartOpen, setCartOpen] = React.useState(false);
+  const active = useMemo(() => products.filter(p => p.status === "active"), []);
+  const [cart, setCart] = useState<CartLine[]>([]);
 
-  // Optional: read ?success=1 or ?canceled=1 from URL to show a simple status.
-  const [status, setStatus] = React.useState<"success" | "canceled" | null>(
-    null
-  );
-  React.useEffect(() => {
-    if (typeof window === "undefined") return;
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("success")) setStatus("success");
-    if (params.get("canceled")) setStatus("canceled");
+  // Load cart from localStorage (client only)
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("cart");
+      if (raw) setCart(JSON.parse(raw));
+    } catch {}
   }, []);
 
-  function addToCart(p: Product) {
-    setItems((prev) => {
-      const idx = prev.findIndex((i) => i.id === p.id);
-      if (idx >= 0) {
-        const copy = [...prev];
-        copy[idx] = { ...copy[idx], qty: copy[idx].qty + 1 };
-        return copy;
-      }
-      return [...prev, { id: p.id, name: p.name, price: p.price, qty: 1 }];
-    });
-    setCartOpen(true);
-  }
-
-  function updateQty(id: string, qty: number) {
-    setItems((prev) =>
-      prev.map((i) => (i.id === id ? { ...i, qty: Math.max(1, qty) } : i))
-    );
-  }
-
-  function remove(id: string) {
-    setItems((prev) => prev.filter((i) => i.id !== id));
-  }
-
-  async function handleCheckout() {
-    if (items.length === 0) return;
-    const lineItems = items.map(toStripeLineItem);
-
+  // Save cart
+  useEffect(() => {
     try {
-      const res = await fetch("/api/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lineItems }),
-      });
+      localStorage.setItem("cart", JSON.stringify(cart));
+    } catch {}
+  }, [cart]);
 
-      // Expecting { url: string } from /api/checkout
-      const data: { url?: string } = await res.json();
-      if (data?.url && typeof window !== "undefined") {
-        window.location.href = data.url;
+  const addToCart = (sku: string) => {
+    const p = active.find(x => x.sku === sku);
+    if (!p) return;
+    setCart(prev => {
+      const i = prev.findIndex(l => l.sku === sku);
+      if (i >= 0) {
+        const next = [...prev];
+        next[i] = { ...next[i], qty: next[i].qty + 1 };
+        return next;
       }
-    } catch {
-      // no-op; you can toast an error here
-    }
-  }
+      return [...prev, { sku: p.sku, name: p.name, price: p.price, qty: 1, image: p.image }];
+    });
+  };
+
+  const total = cart.reduce((s, l) => s + l.price * l.qty, 0);
 
   return (
     <>
       <Head>
-        <title>Nature’s Way Soil — From Our Farm to Your Garden</title>
-        <meta
-          name="description"
-          content="Premium organic soil blends enriched with biochar, worm castings, and mycorrhizae. Healthier plants, bigger yields."
-        />
+        <title>Nature&apos;s Way Soil | Organic Mixes & Amendments</title>
+        <meta name="description" content="Premium organic soils, compost, biochar, and earth-friendly amendments." />
       </Head>
 
-      {/* Status toast after Stripe redirect */}
-      {status && (
-        <div
-          role="status"
-          style={{
-            position: "fixed",
-            top: 16,
-            left: "50%",
-            transform: "translateX(-50%)",
-            background: status === "success" ? "#0b7" : "#b00",
-            color: "#fff",
-            padding: "10px 14px",
-            borderRadius: 8,
-            zIndex: 10_000,
-          }}
-        >
-          {status === "success"
-            ? "Payment successful—thank you!"
-            : "Checkout canceled."}
+      <header style={styles.header}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <img src="/logo.png" alt="Nature's Way Soil" style={{ height: 40 }} />
+          <h1 style={{ margin: 0 }}>Nature&apos;s Way Soil</h1>
         </div>
-      )}
-
-      {/* Hero */}
-      <header
-        style={{
-          padding: "48px 16px 16px",
-          textAlign: "center",
-          maxWidth: 1024,
-          margin: "0 auto",
-        }}
-      >
-        <h1 style={{ margin: 0, lineHeight: 1.15 }}>
-          Nature’s Way Soil <span style={{ opacity: 0.8 }}>🌱</span>
-        </h1>
-        <p style={{ marginTop: 12, opacity: 0.8 }}>
-          From our farm to your garden — premium organic soil blends enriched
-          with biochar, worm castings, & mycorrhizae.
-        </p>
-        <button
-          onClick={() => setCartOpen(true)}
-          style={{
-            marginTop: 12,
-            background: "#0b7",
-            color: "#fff",
-            border: 0,
-            padding: "10px 14px",
-            borderRadius: 8,
-            cursor: "pointer",
-          }}
-        >
-          View Cart
-        </button>
+        <a href="/cart" style={styles.cartLink} aria-label="Cart">
+          🛒 <span style={{ marginLeft: 6 }}>{cart.reduce((s, l) => s + l.qty, 0)} items</span>
+          <span style={{ marginLeft: 8 }}>${total.toFixed(2)}</span>
+        </a>
       </header>
 
-      {/* Product Grid */}
-      <main
-        style={{
-          maxWidth: 1024,
-          margin: "0 auto",
-          padding: 16,
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-          gap: 16,
-        }}
-      >
-        {PRODUCTS.map((p) => (
-          <article
-            key={p.id}
-            style={{
-              border: "1px solid #eee",
-              borderRadius: 12,
-              overflow: "hidden",
-              display: "grid",
-              gridTemplateRows: "160px 1fr auto",
-              background: "#fff",
-            }}
-          >
-            {/* Image */}
-            <div
-              style={{
-                background: `url(${p.image}) center/cover no-repeat`,
-                width: "100%",
-                height: 160,
-              }}
-              aria-label={p.name}
-            />
+      <main style={styles.main}>
+        <section style={styles.hero}>
+          <div>
+            <h2 style={{ fontSize: 28, margin: "0 0 8px" }}>Premium Organic Soil & Amendments</h2>
+            <p style={{ margin: 0 }}>
+              Sustainably sourced, biochar-enriched, and powered by worm castings & mycorrhizae.
+            </p>
+          </div>
+          <img src="/hero.jpg" alt="" style={{ maxHeight: 160, borderRadius: 12, objectFit: "cover" }} />
+        </section>
 
-            {/* Body */}
-            <div style={{ padding: 12 }}>
-              <h3 style={{ margin: "4px 0 0" }}>{p.name}</h3>
-              {p.subtitle ? (
-                <div style={{ fontSize: 12, opacity: 0.7 }}>{p.subtitle}</div>
-              ) : null}
-              <div style={{ marginTop: 8, fontWeight: 700 }}>
-                {(p.price / 100).toLocaleString("en-US", {
-                  style: "currency",
-                  currency: "USD",
-                  minimumFractionDigits: 2,
-                })}
-              </div>
-            </div>
-
-            {/* CTA */}
-            <div style={{ padding: 12 }}>
-              <button
-                onClick={() => addToCart(p)}
-                style={{
-                  width: "100%",
-                  background: "#0b7",
-                  color: "#fff",
-                  border: 0,
-                  padding: "10px 14px",
-                  borderRadius: 8,
-                  cursor: "pointer",
-                }}
-                aria-label={`Add ${p.name} to cart`}
-              >
-                Add to Cart
-              </button>
-            </div>
-          </article>
-        ))}
+        <section>
+          <h3 style={{ margin: "24px 0 12px" }}>Shop</h3>
+          <div style={styles.grid}>
+            {active.map(p => (
+              <article key={p.sku} style={styles.card}>
+                <div style={{ width: "100%", paddingTop: "75%", position: "relative", background: "#f7f7f7" }}>
+                  <img
+                    src={p.image}
+                    alt={p.title || p.name}
+                    style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }}
+                  />
+                </div>
+                <div style={{ padding: 12 }}>
+                  <h4 style={{ margin: "0 0 6px", fontSize: 16 }}>{p.name}</h4>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <strong>${p.price.toFixed(2)}</strong>
+                    <button onClick={() => addToCart(p.sku)} style={styles.button} aria-label={`Add ${p.name} to cart`}>
+                      Add to Cart
+                    </button>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
       </main>
 
-      {/* Cart */}
-      <Cart
-        open={cartOpen}
-        items={items}
-        onUpdateQty={updateQty}
-        onRemove={remove}
-        onCheckout={handleCheckout}
-        onClose={() => setCartOpen(false)}
-      />
-
-      {/* Chat Widget */}
-      <ChatWidget
-        onAsk={async (q) => {
-          // If you have an API route wired (e.g., /api/chat), call it here:
-          // const res = await fetch("/api/chat", {
-          //   method: "POST",
-          //   headers: { "Content-Type": "application/json" },
-          //   body: JSON.stringify({ q }),
-          // });
-          // const data = await res.json();
-          // return data.answer ?? "No answer available right now.";
-
-          // Temporary local fallback:
-          return `Great question about "${q}"! For soil health: mix compost, keep moisture even, and avoid over-fertilizing. 🌿`;
-        }}
-      />
+      <footer style={styles.footer}>
+        <small>© {new Date().getFullYear()} Nature&apos;s Way Soil • <a href="https://natureswaysoil.com">natureswaysoil.com</a></small>
+      </footer>
     </>
   );
 }
+
+const styles: Record<string, React.CSSProperties> = {
+  header: {
+    display: "flex", justifyContent: "space-between", alignItems: "center",
+    padding: "12px 16px", borderBottom: "1px solid #eee", position: "sticky", top: 0, background: "#fff", zIndex: 10
+  },
+  cartLink: { textDecoration: "none", display: "flex", alignItems: "center", fontWeight: 600 },
+  main: { maxWidth: 1100, margin: "0 auto", padding: "16px" },
+  hero: {
+    display: "flex", justifyContent: "space-between", alignItems: "center",
+    padding: 16, borderRadius: 12, background: "#f3faf5", border: "1px solid #e0efe6", gap: 16
+  },
+  grid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
+    gap: 16
+  },
+  card: { border: "1px solid #eee", borderRadius: 12, overflow: "hidden", background: "#fff" },
+  button: { padding: "6px 10px", borderRadius: 8, border: "1px solid #0a7b34", background: "#10a344", color: "#fff", cursor: "pointer" },
+  footer: { textAlign: "center", padding: 24, borderTop: "1px solid #eee", marginTop: 24 }
+};
 
