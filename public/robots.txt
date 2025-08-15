@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://natureswaysoil.com/sitemap.xml
