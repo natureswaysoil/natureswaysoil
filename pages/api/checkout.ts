@@ -4,7 +4,8 @@ import Stripe from "stripe";
 
 const secret = process.env.STRIPE_SECRET_KEY || "";
 
-// safest: omit apiVersion (or use "2023-10-16")
+// safest now: omit apiVersion (or pin "2023-10-16" with your SDK)
+// const stripe = new Stripe(secret, { apiVersion: "2023-10-16" });
 const stripe = new Stripe(secret);
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
