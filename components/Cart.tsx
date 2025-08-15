@@ -1,51 +1,182 @@
-import React from "react";
-export type CartItem = { id: string; name: string; price: number; qty: number };
+// pages/components/Cart.tsx
+import * as React from "react";
 
-export default function Cart({
-  open, onClose, items, onQty, onRemove, promo, subtotal,
-}: {
-  open: boolean; onClose: () => void; items: CartItem[];
-  onQty: (id: string, qty: number) => void; onRemove: (id: string) => void;
-  promo?: string; subtotal: number;
-}) {
+export interface CartItem {
+  id: string;
+  name: string;
+  price: number; // store in cents for Stripe-friendliness; display divides by 100
+  qty: number;
+}
+
+export interface CartProps {
+  open: boolean;
+  items: CartItem[];
+  onUpdateQty: (id: string, qty: number) => void;
+  onRemove: (id: string) => void;
+  onCheckout: () => void;
+  onClose: () => void;
+}
+
+const currency = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+});
+
+const Cart: React.FC<CartProps> = ({
+  open,
+  items,
+  onUpdateQty,
+  onRemove,
+  onCheckout,
+  onClose,
+}) => {
+  // SSR guard not necessary here (no window usage in render),
+  // but keep logic pure & typed.
+  const subtotal = React.useMemo(
+    () => items.reduce((sum, i) => sum + i.price * i.qty, 0),
+    [items]
+  );
+
+  const handleDec = (id: string, current: number) => {
+    const next = Math.max(1, current - 1);
+    onUpdateQty(id, next);
+  };
+
+  const handleInc = (id: string, current: number) => {
+    const next = current + 1;
+    onUpdateQty(id, next);
+  };
+
   if (!open) return null;
+
   return (
-    <aside onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.35)", display:"grid", justifyContent:"end", zIndex:50 }}>
-      <div onClick={(e)=>e.stopPropagation()} style={{ width:380, maxWidth:"90vw", height:"100%", background:"#fff", padding:16, overflow:"auto" }}>
-        <h2 style={{ marginTop:0 }}>Your Cart</h2>
-        {promo && <div style={{ background:"#F1F8F3", padding:8, borderRadius:8, marginBottom:8 }}>Promo: <strong>{promo}</strong></div>}
-        {items.length===0 ? <p>Your cart is empty.</p> : (
-          <ul style={{ listStyle:"none", padding:0, margin:0 }}>
-            {items.map(i=>(
-              <li key={i.id} style={{ display:"grid", gridTemplateColumns:"1fr auto", gap:8, padding:"8px 0", borderBottom:"1px solid #eee" }}>
+    <aside
+      role="dialog"
+      aria-modal="true"
+      aria-label="Shopping cart"
+      style={{
+        position: "fixed",
+        top: 0,
+        right: 0,
+        width: "min(420px, 95vw)",
+        height: "100dvh",
+        background: "#ffffff",
+        boxShadow: "0 0 0 9999px rgba(0,0,0,.3)",
+        zIndex: 1000,
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      <header
+        style={{
+          padding: "16px 20px",
+          borderBottom: "1px solid #eee",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <strong>Cart</strong>
+        <button onClick={onClose} aria-label="Close cart">
+          ✕
+        </button>
+      </header>
+
+      <div style={{ padding: 16, overflowY: "auto", flex: 1 }}>
+        {items.length === 0 ? (
+          <p style={{ opacity: 0.7 }}>Your cart is empty.</p>
+        ) : (
+          <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+            {items.map((it) => (
+              <li
+                key={it.id}
+                style={{
+                  borderBottom: "1px solid #f1f1f1",
+                  padding: "12px 0",
+                  display: "grid",
+                  gridTemplateColumns: "1fr auto",
+                  gap: 12,
+                  alignItems: "center",
+                }}
+              >
                 <div>
-                  <div style={{ fontWeight:600 }}>{i.name}</div>
-                  <div style={{ color:"#475569" }}>${(i.price/100).toFixed(2)}</div>
-                  <div style={{ marginTop:6 }}>
-                    <button onClick={()=>onQty(i.id, Math.max(1, i.qty-1))}>−</button>
-                    <span style={{ padding:"0 8px" }}>{i.qty}</span>
-                    <button onClick={()=>onQty(i.id, i.qty+1)}>+</button>
-                    <button onClick={()=>onRemove(i.id)} style={{ marginLeft:10 }}>Remove</button>
+                  <div style={{ fontWeight: 600 }}>{it.name}</div>
+                  <div style={{ fontSize: 12, opacity: 0.7 }}>
+                    {currency.format(it.price / 100)}
+                  </div>
+                  <div style={{ marginTop: 8, display: "inline-flex", gap: 8 }}>
+                    <button
+                      onClick={() => handleDec(it.id, it.qty)}
+                      aria-label={`Decrease ${it.name}`}
+                    >
+                      −
+                    </button>
+                    <span aria-live="polite">{it.qty}</span>
+                    <button
+                      onClick={() => handleInc(it.id, it.qty)}
+                      aria-label={`Increase ${it.name}`}
+                    >
+                      +
+                    </button>
                   </div>
                 </div>
-                <div style={{ fontWeight:600 }}>${((i.price*i.qty)/100).toFixed(2)}</div>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontWeight: 600 }}>
+                    {currency.format((it.price * it.qty) / 100)}
+                  </div>
+                  <button
+                    onClick={() => onRemove(it.id)}
+                    style={{
+                      marginTop: 6,
+                      fontSize: 12,
+                      opacity: 0.8,
+                      textDecoration: "underline",
+                      background: "transparent",
+                      border: 0,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Remove
+                  </button>
+                </div>
               </li>
             ))}
           </ul>
         )}
-        <div style={{ marginTop:12, display:"flex", justifyContent:"space-between" }}>
-          <div>Subtotal</div><strong>${(subtotal/100).toFixed(2)}</strong>
-        </div>
-        <form method="POST" action="/api/checkout" onSubmit={async(e)=>{
-          e.preventDefault();
-          const lineItems = items.map(i=>({ price: i.id, quantity: i.qty }));
-          const res = await fetch("/api/checkout",{ method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ lineItems }) });
-          const data = await res.json(); if (data?.url) window.location.href = data.url;
-        }}>
-          <button type="submit" disabled={items.length===0} style={{ width:"100%", marginTop:16, background:"#166534", color:"#fff", border:0, borderRadius:10, padding:"12px 14px", fontSize:16 }}>Checkout</button>
-        </form>
-        <button onClick={onClose} style={{ marginTop:8, width:"100%" }}>Continue Shopping</button>
       </div>
+
+      <footer
+        style={{
+          borderTop: "1px solid #eee",
+          padding: 16,
+          display: "grid",
+          gridTemplateColumns: "1fr auto",
+          gap: 12,
+          alignItems: "center",
+        }}
+      >
+        <div>
+          <div style={{ fontSize: 12, opacity: 0.7 }}>Subtotal</div>
+          <div style={{ fontWeight: 700 }}>{currency.format(subtotal / 100)}</div>
+        </div>
+        <button
+          disabled={items.length === 0}
+          onClick={onCheckout}
+          style={{
+            background: "#0b7",
+            border: 0,
+            color: "#fff",
+            padding: "10px 14px",
+            borderRadius: 6,
+            cursor: items.length === 0 ? "not-allowed" : "pointer",
+          }}
+          aria-disabled={items.length === 0}
+        >
+          Checkout
+        </button>
+      </footer>
     </aside>
   );
-}
+};
+
+export default React.memo(Cart);
