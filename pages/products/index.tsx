@@ -1,8 +1,8 @@
 import Head from "next/head";
 import { useRouter } from "next/router";
 import { useState } from "react";
-import { products } from "../../lib/products";
-import { addToCart, cartCount } from "../../lib/cart-store";
+import { products } from "@/lib/products";
+import { addToCart, cartCount } from "@/lib/cart-store";
 
 export default function ProductsPage() {
   const router = useRouter();
@@ -14,7 +14,6 @@ export default function ProductsPage() {
 
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Products</h1>
-        {/* quick cart counter */}
         <button
           onClick={() => router.push("/checkout")}
           className="text-sm px-3 py-2 rounded-xl border"
@@ -31,15 +30,12 @@ export default function ProductsPage() {
             <p className="mt-1 text-gray-700">${p.price.toFixed(2)}</p>
 
             <div className="mt-4 flex gap-2">
-              {/* Buy now → router.push to on-site checkout */}
               <button
                 onClick={() => router.push(`/checkout?slug=${p.slug}&qty=1`)}
                 className="px-4 py-2 rounded-xl bg-green-700 text-white"
               >
                 Buy
               </button>
-
-              {/* Add to cart (localStorage) */}
               <button
                 onClick={() => {
                   addToCart({ slug: p.slug, title: p.title, price: p.price, qty: 1, sku: p.sku });
@@ -49,7 +45,6 @@ export default function ProductsPage() {
               >
                 Add to cart
               </button>
-
               <a href={`/products/${p.slug}`} className="ml-auto text-green-700">
                 View →
               </a>
