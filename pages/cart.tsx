@@ -2,17 +2,13 @@
 import Head from "next/head";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-import { calculate, type Cart, type CartItem } from "../lib/cart";
-import { readCart, setQuantity, removeFromCart, clearCart, onCartChange } from "../lib/cart-store";
+import { calculate, type Cart, type CartItem } from "@/lib/cart";
+import { readCart, setQuantity, removeFromCart, clearCart, onCartChange } from "@/lib/cart-store";
 
 export default function CartPage() {
   const router = useRouter();
   const [items, setItems] = useState<CartItem[]>([]);
   const [cart, setCart] = useState<Cart>({ items: [], shipping: 0, tax: 0, subtotal: 0, total: 0 });
-
-  function recompute(list = items) {
-    setCart(calculate({ items: list, shipping: 0, tax: 0, subtotal: 0, total: 0 }));
-  }
 
   useEffect(() => {
     const init = readCart();
@@ -52,38 +48,17 @@ export default function CartPage() {
               </div>
               <div className="w-28 text-right">${(it.price * it.qty).toFixed(2)}</div>
               <div className="flex items-center gap-2">
-                <button
-                  onClick={() => { setQuantity(it.slug, Math.max(1, it.qty - 1)); }}
-                  className="w-8 h-8 rounded-lg border"
-                  aria-label="Decrease quantity"
-                >–</button>
-                <input
-                  type="number"
-                  min={1}
-                  value={it.qty}
-                  onChange={(e) => {
-                    const q = Math.max(1, Number(e.target.value) || 1);
-                    setQuantity(it.slug, q);
-                  }}
-                  className="w-14 text-center border rounded-lg py-1"
-                />
-                <button
-                  onClick={() => { setQuantity(it.slug, it.qty + 1); }}
-                  className="w-8 h-8 rounded-lg border"
-                  aria-label="Increase quantity"
-                >+</button>
+                <button onClick={() => setQuantity(it.slug, Math.max(1, it.qty - 1))} className="w-8 h-8 rounded-lg border">–</button>
+                <input type="number" min={1} value={it.qty}
+                  onChange={(e) => setQuantity(it.slug, Math.max(1, Number(e.target.value) || 1))}
+                  className="w-14 text-center border rounded-lg py-1" />
+                <button onClick={() => setQuantity(it.slug, it.qty + 1)} className="w-8 h-8 rounded-lg border">+</button>
               </div>
-              <button
-                onClick={() => removeFromCart(it.slug)}
-                className="ml-2 text-sm text-red-600"
-              >Remove</button>
+              <button onClick={() => removeFromCart(it.slug)} className="ml-2 text-sm text-red-600">Remove</button>
             </div>
           ))}
 
-          <button
-            onClick={() => clearCart()}
-            className="text-sm text-gray-600 underline"
-          >
+          <button onClick={() => clearCart()} className="text-sm text-gray-600 underline">
             Clear cart
           </button>
         </section>
@@ -95,10 +70,7 @@ export default function CartPage() {
             <div className="flex justify-between"><span>Shipping</span><span>${cart.shipping.toFixed(2)}</span></div>
             <div className="flex justify-between font-semibold"><span>Total</span><span>${cart.total.toFixed(2)}</span></div>
           </div>
-          <button
-            onClick={() => router.push("/checkout")}
-            className="mt-4 w-full px-5 py-3 rounded-2xl bg-green-700 text-white"
-          >
+          <button onClick={() => router.push("/checkout")} className="mt-4 w-full px-5 py-3 rounded-2xl bg-green-700 text-white">
             Checkout
           </button>
           <a href="/products" className="mt-3 block text-center text-green-700 text-sm">Continue shopping →</a>
@@ -107,3 +79,4 @@ export default function CartPage() {
     </main>
   );
 }
+
