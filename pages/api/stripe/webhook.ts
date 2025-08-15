@@ -31,6 +31,31 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           currency: pi.currency,
           email: pi.receipt_email,
           metadata: pi.metadata
+          // after extracting `pi`
+let fee = 0, net = 0;
+if (pi.latest_charge) {
+  const ch = await stripe.charges.retrieve(pi.latest_charge as string, { expand: ["balance_transaction"] });
+  const bt = ch.balance_transaction as any;
+  fee = (bt?.fee ?? 0) / 100;
+  net = (bt?.net ?? 0) / 100;
+}
+
+// include fee/net in the body you POST to Make.com
+await fetch(process.env.MAKE_WEBHOOK_URL!, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    type: "payment_intent.succeeded",
+    payment_intent: pi.id,
+    amount: pi.amount / 100,
+    currency: pi.currency,
+    email: pi.receipt_email,
+    shipping: pi.shipping,
+    metadata: pi.metadata,       // contains items + shipping_flat from our checkout
+    fee, net
+  })
+});
+
         })
       });
     }
