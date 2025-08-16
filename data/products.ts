@@ -15,7 +15,7 @@ export const products: Product[] = [
     title: "Dog Urine Neutralizer — 1 gal",
     subtitle: "Pet-safe spot repair & odor control",
     price: 39.99,
-    image: "/products/dog-urine-1gal.jpg",
+    image: "https://placehold.co/800x800?text=Dog+Urine+Neutralizer+%26+Lawn+Reviver"
     active: true,
   },
   {
@@ -23,7 +23,7 @@ export const products: Product[] = [
     title: "Liquid Bone Meal Fertilizer — 32 oz",
     subtitle: "Fast phosphorus + calcium",
     price: 24.99,
-    image: "/products/liquid-bone-meal-32oz.jpg",
+    image: "https://placehold.co/800x800?text=Liquid+Bone+Meal+32oz"
     active: true,
   },
   {
@@ -31,7 +31,7 @@ export const products: Product[] = [
     title: "Liquid Kelp Fertilizer — 32 oz",
     subtitle: "Natural hormones & micros",
     price: 24.99,
-    image: "/products/liquid-kelp-32oz.jpg",
+    image: "https://placehold.co/800x800?text=Liquid+Kelp+32oz"
     active: true,
   },
   {
@@ -39,7 +39,7 @@ export const products: Product[] = [
     title: "Hay & Pasture Liquid Fertilizer — 1 gal",
     subtitle: "Horse-safe pasture nutrition",
     price: 49.99,
-    image: "/products/hay-pasture-1gal.jpg",
+    image:"https://placehold.co/800x800?text=Hay+%26+Pasture+1gal"
     active: true,
   },
 ];
