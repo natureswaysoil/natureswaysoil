@@ -1,46 +1,51 @@
-// /data/products.ts
 export type Product = {
   slug: string;
-  name: string;
-  price: number;
-  size: string;
-  image: string;   // e.g. "/products/liquid-kelp-32oz.jpg"
-  tagline?: string;
+  title: string;
+  subtitle?: string;
+  price: number;        // numbers only (no $)
+  image: string;        // e.g. "/products/dog-urine-1gal.jpg"
+  active?: boolean;
 };
 
-export const featured: Product[] = [
+export const products: Product[] = [
+  // ⚠️ Put the real prices you want live. Images must exist under /public/products/
   {
-    slug: "dog-urine-neutralizer-1gal",
-    name: "Dog Urine Neutralizer & Lawn Reviver",
+    slug: "dog-urine-1gal",
+    title: "Dog Urine Neutralizer — 1 gal",
+    subtitle: "Pet-safe spot repair & odor control",
     price: 39.99,
-    size: "1 gal",
     image: "/products/dog-urine-1gal.jpg",
-    tagline: "Pet-safe spot repair & odor control",
+    active: true,
   },
   {
     slug: "liquid-bone-meal-32oz",
-    name: "Liquid Bone Meal Fertilizer",
+    title: "Liquid Bone Meal Fertilizer",
+    subtitle: "Fast phosphorus + calcium — 32 oz",
     price: 24.99,
-    size: "32 oz",
     image: "/products/liquid-bone-meal-32oz.jpg",
-    tagline: "Fast phosphorus + calcium",
+    active: true,
   },
   {
     slug: "liquid-kelp-32oz",
-    name: "Liquid Kelp Fertilizer",
+    title: "Liquid Kelp Fertilizer",
+    subtitle: "Natural hormones & micros — 32 oz",
     price: 24.99,
-    size: "32 oz",
     image: "/products/liquid-kelp-32oz.jpg",
-    tagline: "Natural hormones & micros",
+    active: true,
   },
   {
     slug: "hay-pasture-1gal",
-    name: "Hay & Pasture Liquid Fertilizer",
+    title: "Hay & Pasture Liquid Fertilizer — 1 gal",
+    subtitle: "Horse-safe pasture nutrition",
     price: 49.99,
-    size: "1 gal",
     image: "/products/hay-pasture-1gal.jpg",
-    tagline: "Horse-safe pasture nutrition",
+    active: true,
   },
+  // add more active items as needed…
 ];
+
+export function getProduct(slug: string) {
+  return products.find(p => p.slug === slug && (p.active ?? true)) || null;
+}
 
 
