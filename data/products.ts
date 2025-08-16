@@ -43,8 +43,4 @@ export const featured: Product[] = [
   },
 ];
 
-/public/products/
-  dog-urine-1gal.jpg
-  liquid-bone-meal-32oz.jpg
-  liquid-kelp-32oz.jpg
-  hay-pasture-1gal.jpg
+
