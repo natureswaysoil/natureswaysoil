@@ -6,8 +6,9 @@ export default function Header() {
     <header className="border-b bg-white">
       <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-3">
+          {/* Your repo shows the logo at /public/logo-with-tagline.png */}
           <Image
-            src="/logo-with-tagline.png"   // ← updated to match your /public folder
+            src="/logo-with-tagline.png"
             alt="Nature's Way Soil"
             width={64}
             height={64}
