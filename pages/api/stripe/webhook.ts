@@ -1,12 +1,21 @@
+
+
 import type { NextApiRequest, NextApiResponse } from "next";
 import Stripe from "stripe";
-import getRawBody from "raw-body";
 
 export const config = { api: { bodyParser: false } };
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
   apiVersion: "2024-06-20",
 });
+
+async function readRawBody(req: NextApiRequest): Promise<Buffer> {
+  const chunks: Buffer[] = [];
+  for await (const chunk of req as any) {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  }
+  return Buffer.concat(chunks);
+}
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") return res.status(405).send("Method not allowed");
@@ -16,7 +25,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   let event: Stripe.Event;
   try {
-    const raw = await getRawBody(req);
+    const raw = await readRawBody(req);
     event = stripe.webhooks.constructEvent(
       raw,
       sig as string,
@@ -29,22 +38,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (event.type === "payment_intent.succeeded") {
     const pi = event.data.object as Stripe.PaymentIntent;
 
-    // 1) compute fee/net first
+    // compute Stripe fees/net from the balance transaction
     let fee = 0, net = 0;
     try {
       if (pi.latest_charge) {
-        const ch = await stripe.charges.retrieve(pi.latest_charge as string, {
-          expand: ["balance_transaction"],
-        });
+        const ch = await stripe.charges.retrieve(pi.latest_charge as string, { expand: ["balance_transaction"] });
         const bt = ch.balance_transaction as Stripe.BalanceTransaction | null;
-        if (bt) {
-          fee = (bt.fee ?? 0) / 100;
-          net = (bt.net ?? 0) / 100;
-        }
+        if (bt) { fee = (bt.fee ?? 0) / 100; net = (bt.net ?? 0) / 100; }
       }
     } catch { /* ignore fee lookup errors */ }
 
-    // 2) now build the payload (fee/net are simple numbers)
+    // forward to Make (optional)
     if (process.env.MAKE_WEBHOOK_URL) {
       await fetch(process.env.MAKE_WEBHOOK_URL, {
         method: "POST",
@@ -58,8 +62,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           email: pi.receipt_email,
           shipping: pi.shipping,
           metadata: pi.metadata,
-          fee,
-          net,
+          fee, net,
         }),
       });
     }
