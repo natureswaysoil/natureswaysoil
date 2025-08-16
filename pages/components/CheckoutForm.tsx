@@ -21,11 +21,7 @@ const stripePromise = pk ? loadStripe(pk) : null;
 
 // ---- Types ----
 type LineItem = { slug: string; title: string; unitAmountCents: number; qty: number };
-
-type IntentResponse = {
-  clientSecret?: string;
-  error?: string;
-};
+type IntentResponse = { clientSecret?: string; error?: string };
 
 // ---- Helpers ----
 function toCents(v: number) {
@@ -42,9 +38,11 @@ function buildCartFromQuery(router: ReturnType<typeof useRouter>): Cart | null {
   const p = getProduct(s);
   if (!p) return null;
 
-  return {
+  // ✅ Type the object explicitly as Cart to satisfy TS
+  const cart: Cart = {
     items: [{ slug: p.slug, title: p.title, price: p.price, qty: q }],
   };
+  return cart;
 }
 
 function cartToItems(cart: Cart): LineItem[] {
@@ -60,11 +58,9 @@ function cartToItems(cart: Cart): LineItem[] {
 // Inner Stripe checkout
 // =======================
 function InnerCheckout({
-  clientSecret,
   onSuccess,
   emailHint,
 }: {
-  clientSecret: string;
   onSuccess: (piId?: string) => void;
   emailHint?: string;
 }) {
@@ -80,10 +76,7 @@ function InnerCheckout({
 
     const { error, paymentIntent } = await stripe.confirmPayment({
       elements,
-      confirmParams: {
-        // If you collect email in AddressElement, Stripe will use it.
-        receipt_email: emailHint,
-      },
+      confirmParams: { receipt_email: emailHint },
       redirect: 'if_required',
     });
 
@@ -128,7 +121,7 @@ export default function CheckoutForm() {
   const router = useRouter();
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
-  const [emailHint, setEmailHint] = useState<string | undefined>(undefined);
+  const [emailHint] = useState<string | undefined>(undefined);
   const [creating, setCreating] = useState(false);
 
   // Build a cart either from ?slug=… or from cart-store
@@ -138,7 +131,10 @@ export default function CheckoutForm() {
     return readCart() || { items: [] };
   }, [router.query]);
 
-  const totals = useMemo(() => (cart ? calculate(cart) : { subtotal: 0, shipping: 0, total: 0 }), [cart]);
+  const totals = useMemo(
+    () => (cart ? calculate(cart) : { subtotal: 0, shipping: 0, total: 0 }),
+    [cart]
+  );
   const items = useMemo(() => (cart ? cartToItems(cart) : []), [cart]);
   const amountCents = toCents(totals.total || totals.subtotal || 0);
 
@@ -157,14 +153,11 @@ export default function CheckoutForm() {
           body: JSON.stringify({
             amountCents,
             items, // server may ignore; included for records
-            // Optional metadata examples:
             meta: { source: 'web_checkout' },
           }),
         });
         const j: IntentResponse = await r.json();
-        if (!r.ok || !j.clientSecret) {
-          throw new Error(j.error || 'Unable to start checkout.');
-        }
+        if (!r.ok || !j.clientSecret) throw new Error(j.error || 'Unable to start checkout.');
         setClientSecret(j.clientSecret);
       } catch (err: any) {
         setStatus(err?.message || 'Could not start checkout.');
@@ -176,10 +169,10 @@ export default function CheckoutForm() {
     createIntent();
   }, [amountCents, JSON.stringify(items)]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  function onSuccess(piId?: string) {
+  function onSuccess(_piId?: string) {
     clearCart(); // clear only after success
     setStatus('Thanks! Your order has been received.');
-    // Optional: router.push(`/thank-you?pi=${piId}`);
+    // router.push(`/thank-you?pi=${_piId}`);
   }
 
   if (!pk || !stripePromise) {
@@ -188,59 +181,4 @@ export default function CheckoutForm() {
         <h2 className="font-semibold text-lg">Checkout unavailable</h2>
         <p className="mt-2 text-sm text-gray-700">
           Missing <code>NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</code>. Add it in Vercel → Project →
-          Settings → Environment Variables (Production), then redeploy.
-        </p>
-      </div>
-    );
-  }
-
-  if (!cart || !items.length || amountCents <= 0) {
-    return (
-      <div className="rounded-2xl border p-6">
-        <h2 className="font-semibold text-lg">Your cart is empty</h2>
-        <p className="mt-2 text-sm text-gray-700">Add a product and try again.</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="max-w-lg mx-auto rounded-2xl border p-6">
-      <h1 className="text-2xl font-bold">Checkout</h1>
-
-      <div className="mt-4 mb-6 text-sm text-gray-700">
-        <ul className="space-y-1">
-          {items.map((it) => (
-            <li key={it.slug} className="flex justify-between">
-              <span>
-                {it.title} × {it.qty}
-              </span>
-              <span>${((it.unitAmountCents * it.qty) / 100).toFixed(2)}</span>
-            </li>
-          ))}
-        </ul>
-        <div className="mt-3 flex justify-between font-semibold">
-          <span>Total</span>
-          <span>${(amountCents / 100).toFixed(2)}</span>
-        </div>
-      </div>
-
-      {status && <div className="mb-4 text-green-700 text-sm">{status}</div>}
-
-      {creating && <div className="text-sm text-gray-600">Starting secure checkout…</div>}
-
-      {clientSecret && (
-        <Elements
-          stripe={stripePromise}
-          options={{
-            clientSecret,
-            appearance: { theme: 'stripe' },
-          }}
-        >
-          <InnerCheckout clientSecret={clientSecret} onSuccess={onSuccess} emailHint={emailHint} />
-        </Elements>
-      )}
-    </div>
-  );
-}
-
-
+          Settings → Env
