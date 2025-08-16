@@ -56,7 +56,7 @@ export default function FloatingChat() {
               placeholder="Ask about products, shipping, refunds…"
               className="flex-1 border rounded-xl px-3 py-2"
             />
-            <button onClick={send} disabled={busy} className="px-4 py-2 rounded-xl bg-green-700 text-white">
+            <button onClick={send} disabled={busy} className="px-4 py-2 rounded-2xl bg-green-700 text-white">
               Send
             </button>
           </div>
@@ -65,16 +65,4 @@ export default function FloatingChat() {
     </>
   );
 }
-// pages/_app.tsx
-import type { AppProps } from "next/app";
-import "@/styles/globals.css";
-import FloatingChat from "@/components/FloatingChat";
 
-export default function MyApp({ Component, pageProps }: AppProps) {
-  return (
-    <>
-      <Component {...pageProps} />
-      <FloatingChat />
-    </>
-  );
-}
