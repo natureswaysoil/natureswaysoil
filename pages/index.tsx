@@ -1,4 +1,3 @@
-// /pages/index.tsx
 import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
@@ -50,6 +49,9 @@ export default function Home() {
           content="Family-crafted, microbe-rich lawn and garden products. Pet-safe, biochar boosted, and FBM-shipped fast."
         />
         <link rel="canonical" href="https://natureswaysoil.com/" />
+        {process.env.NEXT_PUBLIC_ENV === "preview" && (
+          <meta name="robots" content="noindex,nofollow" />
+        )}
       </Head>
 
       {/* Header */}
@@ -68,6 +70,7 @@ export default function Home() {
           </Link>
           <nav className="hidden md:flex items-center gap-6 text-sm">
             <Link href="/products" className="hover:text-green-700">Products</Link>
+            <Link href="/learn" className="hover:text-green-700">Learn</Link>
             <Link href="/about" className="hover:text-green-700">About</Link>
             <Link href="/contact" className="hover:text-green-700">Contact</Link>
             <HeaderCart />
@@ -107,7 +110,7 @@ export default function Home() {
           </p>
         </div>
         <div className="rounded-2xl border p-4">
-          {/* Drop your educational video link here (YouTube/Vimeo embed). Example: */}
+          {/* Drop your educational video link here */}
           <div className="aspect-video rounded-xl overflow-hidden bg-gray-100 flex items-center justify-center">
             <span className="text-gray-500 text-sm">Your educational video goes here</span>
           </div>
@@ -185,4 +188,19 @@ export default function Home() {
             <p className="mt-3 text-gray-600">
               Safe for families, pets, and pollinators when used as directed.
             </p>
+          </div>
+          <div>
+            <h4 className="font-semibold">Company</h4>
+            <ul className="mt-2 space-y-1">
+              <li><Link href="/about" className="hover:text-green-700">About</Link></li>
+              <li><Link href="/contact" className="hover:text-green-700">Contact</Link></li>
+              <li><Link href="/products" className="hover:text-green-700">Products</Link></li>
+              <li><Link href="/learn" className="hover:text-green-700">Learn</Link></li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="font-semibold">Policies</h4>
+            <ul className="mt-2 space-y-1">
+              <li><Link href="/policies/shipping" classNa
+
 
