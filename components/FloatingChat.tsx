@@ -65,3 +65,16 @@ export default function FloatingChat() {
     </>
   );
 }
+// pages/_app.tsx
+import type { AppProps } from "next/app";
+import "@/styles/globals.css";
+import FloatingChat from "@/components/FloatingChat";
+
+export default function MyApp({ Component, pageProps }: AppProps) {
+  return (
+    <>
+      <Component {...pageProps} />
+      <FloatingChat />
+    </>
+  );
+}
