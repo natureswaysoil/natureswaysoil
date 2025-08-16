@@ -4,7 +4,9 @@ import Stripe from "stripe";
 import { calculate } from "@/lib/cart";
 
 const secret = process.env.STRIPE_SECRET_KEY || "";
-const stripe = new Stripe(secret, { apiVersion: "2024-04-10" });
+const stripe = new Stripe(secret as string);
+
+
 
 
 
