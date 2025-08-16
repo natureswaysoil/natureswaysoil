@@ -1,14 +1,15 @@
+// /data/products.ts
+
 export type Product = {
   slug: string;
   title: string;
   subtitle?: string;
-  price: number;        // numbers only (no $)
-  image: string;        // e.g. "/products/dog-urine-1gal.jpg"
-  active?: boolean;
+  price: number;        // <-- numeric only (no $)
+  image: string;        // <-- path under /public
+  active?: boolean;     // set false to hide without deleting
 };
 
 export const products: Product[] = [
-  // ⚠️ Put the real prices you want live. Images must exist under /public/products/
   {
     slug: "dog-urine-1gal",
     title: "Dog Urine Neutralizer — 1 gal",
@@ -19,16 +20,16 @@ export const products: Product[] = [
   },
   {
     slug: "liquid-bone-meal-32oz",
-    title: "Liquid Bone Meal Fertilizer",
-    subtitle: "Fast phosphorus + calcium — 32 oz",
+    title: "Liquid Bone Meal Fertilizer — 32 oz",
+    subtitle: "Fast phosphorus + calcium",
     price: 24.99,
     image: "/products/liquid-bone-meal-32oz.jpg",
     active: true,
   },
   {
     slug: "liquid-kelp-32oz",
-    title: "Liquid Kelp Fertilizer",
-    subtitle: "Natural hormones & micros — 32 oz",
+    title: "Liquid Kelp Fertilizer — 32 oz",
+    subtitle: "Natural hormones & micros",
     price: 24.99,
     image: "/products/liquid-kelp-32oz.jpg",
     active: true,
@@ -41,11 +42,14 @@ export const products: Product[] = [
     image: "/products/hay-pasture-1gal.jpg",
     active: true,
   },
-  // add more active items as needed…
 ];
 
+// --- helpers ---
+export const activeProducts = products.filter(p => p.active !== false);
+
 export function getProduct(slug: string) {
-  return products.find(p => p.slug === slug && (p.active ?? true)) || null;
+  return activeProducts.find(p => p.slug === slug) ?? null;
 }
+
 
 
