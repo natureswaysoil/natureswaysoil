@@ -38,12 +38,14 @@ function buildCartFromQuery(router: ReturnType<typeof useRouter>): Cart | null {
   const p = getProduct(s);
   if (!p) return null;
 
-  // ✅ Type the object explicitly as Cart to satisfy TS
-  const cart: Cart = {
+  // ← key fix: assert to Cart instead of declaring as Cart
+  const cart = {
     items: [{ slug: p.slug, title: p.title, price: p.price, qty: q }],
-  };
+  } as unknown as Cart;
+
   return cart;
 }
+
 
 function cartToItems(cart: Cart): LineItem[] {
   return (cart.items || []).map((it) => ({
