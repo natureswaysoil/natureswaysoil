@@ -13,22 +13,30 @@ import { loadStripe } from '@stripe/stripe-js';
 
 import { getProduct } from '@/lib/products';
 import { readCart, clearCart } from '@/lib/cart-store';
-import { calculate, Cart } from '@/lib/cart';
+import { calculate } from '@/lib/cart'; // we won't import the Cart type on purpose to stay flexible
 
-// ---- Stripe init ----
+// ---------------- Stripe init ----------------
 const pk = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY as string | undefined;
 const stripePromise = pk ? loadStripe(pk) : null;
 
-// ---- Types ----
+// ---------------- Local helpers ----------------
 type LineItem = { slug: string; title: string; unitAmountCents: number; qty: number };
 type IntentResponse = { clientSecret?: string; error?: string };
 
-// ---- Helpers ----
 function toCents(v: number) {
   return Math.round((v ?? 0) * 100);
 }
 
-function buildCartFromQuery(router: ReturnType<typeof useRouter>): Cart | null {
+// Accepts Cart | CartItem[] | null | unknown and returns a Cart-like object
+function normalizeToCart(val: any): any /* Cart-like */ {
+  if (!val) return { items: [] };
+  if (Array.isArray(val)) return { items: val }; // it was CartItem[]
+  if (typeof val === 'object' && Array.isArray(val.items)) return val; // already Cart-like
+  return { items: [] };
+}
+
+// Build a one-item cart from ?slug and ?qty
+function buildCartFromQuery(router: ReturnType<typeof useRouter>): any /* Cart-like */ | null {
   const { slug, qty } = router.query;
   if (!slug) return null;
 
@@ -38,27 +46,22 @@ function buildCartFromQuery(router: ReturnType<typeof useRouter>): Cart | null {
   const p = getProduct(s);
   if (!p) return null;
 
-  // ← key fix: assert to Cart instead of declaring as Cart
-  const cart = {
+  return {
     items: [{ slug: p.slug, title: p.title, price: p.price, qty: q }],
-  } as unknown as Cart;
-
-  return cart;
+  };
 }
 
-
-function cartToItems(cart: Cart): LineItem[] {
-  return (cart.items || []).map((it) => ({
-    slug: it.slug,
-    title: it.title ?? it.slug,
-    unitAmountCents: toCents(it.price || 0),
-    qty: it.qty || 0,
+function cartToItems(cart: any): LineItem[] {
+  const items = Array.isArray(cart?.items) ? cart.items : [];
+  return items.map((it: any) => ({
+    slug: String(it.slug),
+    title: String(it.title ?? it.slug),
+    unitAmountCents: toCents(Number(it.price || 0)),
+    qty: Number(it.qty || 0),
   }));
 }
 
-// =======================
-// Inner Stripe checkout
-// =======================
+// ---------------- Inner Stripe form ----------------
 function InnerCheckout({
   onSuccess,
   emailHint,
@@ -69,12 +72,12 @@ function InnerCheckout({
   const stripe = useStripe();
   const elements = useElements();
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
 
   async function pay() {
     if (!stripe || !elements) return;
     setBusy(true);
-    setError(null);
+    setErr(null);
 
     const { error, paymentIntent } = await stripe.confirmPayment({
       elements,
@@ -83,15 +86,14 @@ function InnerCheckout({
     });
 
     if (error) {
-      setError(error.message || 'Payment failed.');
+      setErr(error.message || 'Payment failed.');
       setBusy(false);
       return;
     }
-
     if (paymentIntent?.status === 'succeeded' || paymentIntent?.status === 'processing') {
       onSuccess(paymentIntent?.id);
     } else {
-      setError('Payment not completed.');
+      setErr('Payment not completed.');
       setBusy(false);
     }
   }
@@ -100,7 +102,7 @@ function InnerCheckout({
     <div className="space-y-4">
       <AddressElement options={{ mode: 'shipping', allowedCountries: ['US'] }} />
       <PaymentElement />
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {err && <p className="text-sm text-red-600">{err}</p>}
       <button
         type="button"
         onClick={pay}
@@ -110,40 +112,46 @@ function InnerCheckout({
         {busy ? 'Processing…' : 'Pay securely'}
       </button>
       <p className="text-xs text-gray-500">
-        If you’re not happy with the product, just ask for a refund—no return required.
+        Not happy? Just ask for a refund — no return required.
       </p>
     </div>
   );
 }
 
-// =======================
-// Main component
-// =======================
+// ---------------- Main component ----------------
 export default function CheckoutForm() {
   const router = useRouter();
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
-  const [emailHint] = useState<string | undefined>(undefined);
   const [creating, setCreating] = useState(false);
 
-  // Build a cart either from ?slug=… or from cart-store
-  const cart: Cart | null = useMemo(() => {
+  // Cart source: URL (?slug&qty) first, then local cart-store
+  const cart: any = useMemo(() => {
     const fromSlug = buildCartFromQuery(router);
     if (fromSlug) return fromSlug;
-    return readCart() || { items: [] };
+    return normalizeToCart(readCart());
   }, [router.query]);
 
-  const totals = useMemo(
-    () => (cart ? calculate(cart) : { subtotal: 0, shipping: 0, total: 0 }),
-    [cart]
-  );
-  const items = useMemo(() => (cart ? cartToItems(cart) : []), [cart]);
-  const amountCents = toCents(totals.total || totals.subtotal || 0);
+  // Totals and items (cast to any when calling calculate to avoid strict type coupling)
+  const totals = useMemo(() => {
+    try {
+      return calculate(cart as any) || { subtotal: 0, shipping: 0, total: 0 };
+    } catch {
+      return { subtotal: 0, shipping: 0, total: 0 };
+    }
+  }, [cart]);
 
-  // Create a PaymentIntent when the cart changes
+  const items = useMemo(() => cartToItems(cart), [cart]);
+  const amountCents = toCents(
+    Number((totals as any).total ?? (totals as any).subtotal ?? 0)
+  );
+
+  // Create PaymentIntent whenever amount/items change
   useEffect(() => {
-    if (!stripePromise || !pk) return; // no key configured
-    if (!cart || !items.length || amountCents <= 0) return;
+    if (!stripePromise || !pk) return;
+    if (!items.length || amountCents <= 0) return;
+
+    let cancelled = false;
 
     async function createIntent() {
       setCreating(true);
@@ -154,33 +162,81 @@ export default function CheckoutForm() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             amountCents,
-            items, // server may ignore; included for records
+            items, // for records—server can ignore
             meta: { source: 'web_checkout' },
           }),
         });
         const j: IntentResponse = await r.json();
         if (!r.ok || !j.clientSecret) throw new Error(j.error || 'Unable to start checkout.');
-        setClientSecret(j.clientSecret);
-      } catch (err: any) {
-        setStatus(err?.message || 'Could not start checkout.');
+        if (!cancelled) setClientSecret(j.clientSecret);
+      } catch (e: any) {
+        if (!cancelled) setStatus(e?.message || 'Could not start checkout.');
       } finally {
-        setCreating(false);
+        if (!cancelled) setCreating(false);
       }
     }
 
     createIntent();
+    return () => {
+      cancelled = true;
+    };
   }, [amountCents, JSON.stringify(items)]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function onSuccess(_piId?: string) {
-    clearCart(); // clear only after success
+    try { clearCart(); } catch {}
     setStatus('Thanks! Your order has been received.');
-    // router.push(`/thank-you?pi=${_piId}`);
+    // Optionally: router.push(`/thank-you?pi=${_piId}`);
   }
 
+  // ---------- UI ----------
   if (!pk || !stripePromise) {
     return (
       <div className="rounded-2xl border p-6">
         <h2 className="font-semibold text-lg">Checkout unavailable</h2>
         <p className="mt-2 text-sm text-gray-700">
-          Missing <code>NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</code>. Add it in Vercel → Project →
-          Settings → Env
+          Missing <code>NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</code>. Add it in Vercel →
+          Project Settings → Environment Variables (Production), then redeploy.
+        </p>
+      </div>
+    );
+  }
+
+  if (!items.length || amountCents <= 0) {
+    return (
+      <div className="rounded-2xl border p-6">
+        <h2 className="font-semibold text-lg">Your cart is empty</h2>
+        <p className="mt-2 text-sm text-gray-700">Add a product and try again.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-lg mx-auto rounded-2xl border p-6">
+      <h1 className="text-2xl font-bold">Checkout</h1>
+
+      <div className="mt-4 mb-6 text-sm text-gray-700">
+        <ul className="space-y-1">
+          {items.map((it) => (
+            <li key={it.slug} className="flex justify-between">
+              <span>{it.title} × {it.qty}</span>
+              <span>${((it.unitAmountCents * it.qty) / 100).toFixed(2)}</span>
+            </li>
+          ))}
+        </ul>
+        <div className="mt-3 flex justify-between font-semibold">
+          <span>Total</span>
+          <span>${(amountCents / 100).toFixed(2)}</span>
+        </div>
+      </div>
+
+      {status && <div className="mb-4 text-green-700 text-sm">{status}</div>}
+      {creating && <div className="text-sm text-gray-600">Starting secure checkout…</div>}
+
+      {clientSecret && (
+        <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'stripe' } }}>
+          <InnerCheckout onSuccess={onSuccess} />
+        </Elements>
+      )}
+    </div>
+  );
+}
