@@ -1,6 +1,6 @@
 // /data/products.ts
 
-// Base product you edit. `sku` is optional for you.
+// Base product you edit. sku stays optional for you.
 export type ProductBase = {
   slug: string;
   title: string;
@@ -8,13 +8,13 @@ export type ProductBase = {
   price: number;   // number only (no $)
   image: string;   // path under /public, e.g. "/products/dog-urine-1gal.jpg"
   active: boolean;
-  sku?: string;    // optional: if you provide it, we use it
+  sku?: string;    // optional: your manual SKU wins if provided
 };
 
 // Product the app uses everywhere: sku is guaranteed
 export type Product = Omit<ProductBase, "sku"> & { sku: string };
 
-/** Edit this list as usual (no need to include sku unless you want to). */
+/** Edit this list as usual (you may add `sku` if you want to override the generator). */
 const RAW_PRODUCTS: ProductBase[] = [
   {
     slug: "dog-urine-1gal",
@@ -23,7 +23,7 @@ const RAW_PRODUCTS: ProductBase[] = [
     price: 39.99,
     image: "/products/dog-urine-1gal.jpg",
     active: true,
-    // sku: "DOG-URINE-1GAL", // optionally set your own
+    // sku: "NWS-128-DU", // optional manual override
   },
   {
     slug: "liquid-bone-meal-32oz",
@@ -51,18 +51,54 @@ const RAW_PRODUCTS: ProductBase[] = [
   },
 ];
 
-/** If you didn't specify sku, generate one from slug and a sequence number. */
-function makeSku(p: ProductBase, index: number): string {
-  if (p.sku && p.sku.trim()) return p.sku.trim();
-  const base = p.slug.replace(/[^a-z0-9]/gi, "").toUpperCase();
-  const seq = String(index + 1).padStart(3, "0");
-  return `NWS-${base}-${seq}`;
+/* ---------- SKU helpers ---------- */
+
+/** Pull ounces from title or slug. Handles "32 oz", "1 gal"/"1gal" -> 128, etc. */
+function extractOunces(p: ProductBase): number {
+  // from title: "32 oz"
+  const ozTitle = p.title.match(/(\d+(?:\.\d+)?)\s*oz/i);
+  if (ozTitle) return Math.round(parseFloat(ozTitle[1]));
+
+  // from slug: "...-32oz"
+  const ozSlug = p.slug.match(/(\d+)\s*oz|(\d+)oz/i);
+  if (ozSlug) return parseInt(ozSlug[1] || ozSlug[2], 10);
+
+  // gallons in title: "1 gal" / "1 gallon"
+  const galTitle = p.title.match(/(\d+(?:\.\d+)?)\s*(?:gal|gallon)s?/i);
+  if (galTitle) return Math.round(parseFloat(galTitle[1]) * 128);
+
+  // gallons in slug: "...-1gal"
+  const galSlug = p.slug.match(/(\d+(?:\.\d+)?)\s*gal|(\d+(?:\.\d+)?)gal/i);
+  if (galSlug) return Math.round(parseFloat(galSlug[1] || galSlug[2]) * 128);
+
+  return 0; // unknown
 }
 
-/** This is what the rest of the app imports. */
-export const PRODUCTS: Product[] = RAW_PRODUCTS.map((p, i) => ({
+/** Take first two words of the title, return their initials (e.g., "Liquid Kelp ..." -> "LK"). */
+function firstTwoInitials(title: string): string {
+  const words = title.split(/[^a-zA-Z]+/).filter(Boolean);
+  const [w1, w2] = words;
+  const letters = (w1 ? w1[0] : "") + (w2 ? w2[0] : "");
+  return (letters || "XX").toUpperCase();
+}
+
+/** Your SKU pattern: NWS-<ounces>-<first-two-initials> */
+function makeSku(p: ProductBase): string {
+  if (p.sku && p.sku.trim()) return p.sku.trim(); // manual override
+
+  const oz = extractOunces(p);
+  const ozPart = oz > 0 ? String(oz) : "000";
+
+  const initials = firstTwoInitials(p.title);
+
+  return `NWS-${ozPart}-${initials}`;
+}
+
+/* ---------- Final export ---------- */
+
+export const PRODUCTS: Product[] = RAW_PRODUCTS.map((p) => ({
   ...p,
-  sku: makeSku(p, i),
+  sku: makeSku(p),
 }));
 
 export const activeProducts = PRODUCTS.filter((p) => p.active);
@@ -72,4 +108,3 @@ export function getProduct(slug: string): Product | null {
 }
 
 export type { Product as DefaultProduct };
-
