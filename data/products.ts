@@ -1,96 +1,76 @@
-// data/products.ts
-// Bridge wrapper around your generated data_products.ts
-// Ensures the UI always has name, title, price (cents), image fallback,
-// and a guaranteed `slug` for product links.
+// /data/products.ts
+// Copy-paste this entire file
 
-import * as RAW from "../data_products";
-
-type MaybeAny = any;
-const RAW_LIST: MaybeAny[] =
-  (RAW as any).PRODUCTS ??
-  (RAW as any).default ??
-  (RAW as any).products ??
-  [];
-
-/** App-wide product type used by components */
 export type Product = {
   id: string;
-  name: string;
-  title?: string;
-  price: number;            // cents
+  title: string;
+  price: number;         // cents
   image?: string;
   subtitle?: string;
-  description?: string;
-  sku?: string;
-  stripePriceId?: string | null;
-  status?: "active" | "draft";
-  category?: string;
-  slug: string;             // <-- now guaranteed
+  slug: string;
 };
 
-function slugify(input: string): string {
-  return String(input)
+// IMPORTANT: the file BELOW must exist at: /data/data_products.ts
+// If your file is somewhere else, see the notes after this file.
+import * as RAW from "./data_products";
+
+// Accept a few possible export shapes: PRODUCTS / default / products
+type AnyList = any[];
+const RAW_LIST: AnyList =
+  ((RAW as any).PRODUCTS as AnyList) ??
+  ((RAW as any).default as AnyList) ??
+  ((RAW as any).products as AnyList) ??
+  [];
+
+// tiny helpers
+const toSlug = (s: string) =>
+  String(s || "")
     .toLowerCase()
-    .trim()
     .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
+    .replace(/(^-|-$)/g, "");
 
-/** Normalize raw input into strict Product[] our UI expects */
-function normalize(raw: any): Product | null {
-  if (!raw) return null;
+const toCents = (v: any) => {
+  const n = Number(v);
+  // if the CSV already provided cents, keep it; otherwise convert dollars->cents
+  if (!isFinite(n)) return 0;
+  return n > 0 && n < 1000 ? Math.round(n * 100) : Math.round(n);
+};
 
-  const title = String(raw.title ?? raw.name ?? "").trim();
-  const price = Number(raw.price ?? 0);
-  if (!title || !price) return null;
+const SEEN = new Set<string>();
+const list: Product[] = [];
 
-  const id =
-    String(raw.id ?? title.toLowerCase().replace(/[^a-z0-9]+/g, "_")).trim();
+for (const r of RAW_LIST) {
+  const idRaw = r?.id ?? r?.sku ?? r?.ID ?? "";
+  const titleRaw = r?.title ?? r?.name ?? r?.Title ?? "";
+  const priceRaw = r?.price ?? r?.Price ?? r?.["Selling Price"] ?? 0;
 
-  const name = String(raw.name ?? title);
-  const image =
-    raw.image && String(raw.image).trim()
-      ? String(raw.image).trim()
-      : "/products/missing.jpg"; // safe fallback
+  const id = String(idRaw).trim();
+  const title = String(titleRaw).trim();
+  const price = toCents(priceRaw);
 
-  const status =
-    String(raw.status ?? "active").toLowerCase() === "draft" ? "draft" : "active";
+  // only keep active + complete rows if the generator included flags
+  const active = (r?.active ?? r?.Active ?? r?.status ?? r?.Status) ?? true;
+  if (!active) continue;
 
-  const baseForSlug = raw.slug ?? raw.id ?? title;
-  const slug = slugify(baseForSlug);
+  if (!id || !title || !price) continue;
 
-  return {
-    id,
-    name,
+  // ensure unique id
+  let uid = id;
+  let i = 2;
+  while (SEEN.has(uid)) uid = `${id}-${i++}`;
+  SEEN.add(uid);
+
+  list.push({
+    id: uid,
     title,
     price,
-    image,
-    subtitle: raw.subtitle || undefined,
-    description: raw.description || undefined,
-    sku: raw.sku || undefined,
-    stripePriceId: raw.stripePriceId ?? null,
-    status,
-    category: raw.category || undefined,
-    slug, // <-- guaranteed
-  };
+    image: r?.image ?? r?.Image ?? r?.img ?? undefined,
+    subtitle: r?.subtitle ?? r?.Subtitle ?? undefined,
+    slug: toSlug(title),
+  });
 }
 
-/** Final, sanitized array used by pages/components */
-export const PRODUCTS: Product[] = (Array.isArray(RAW_LIST) ? RAW_LIST : [])
-  .map(normalize)
-  .filter((p): p is Product => Boolean(p));
-
-/** Helpers */
-export function getProduct(idOrSlug: string) {
-  return (
-    PRODUCTS.find((p) => p.id === idOrSlug || p.slug === idOrSlug) ?? null
-  );
-}
-
-export function activeProducts() {
-  return PRODUCTS.filter((p) => (p.status ?? "active") === "active");
-}
-
+export const PRODUCTS: Product[] = list;
 
 
 
