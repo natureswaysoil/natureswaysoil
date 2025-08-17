@@ -3,7 +3,7 @@ import React, { useMemo, useState } from "react";
 import Head from "next/head";
 
 // IMPORTANT: keep these paths exactly as shown
-import { PRODUCTS, type Product } from "../data/products";
+import { PRODUCTS, type Product } from "../lib/products";
 import Cart, { type CartItem } from "../components/Cart";
 import ChatWidget from "../components/ChatWidget";
 
