@@ -1,45 +1,41 @@
 // components/ProductCard.tsx
+import Image from "next/image";
 import Link from "next/link";
-import type { Product } from "@/data/products";
+import type { Product } from "../data/products";
+import { money } from "../data/products";
+import { addToCart } from "../lib/cart-store";
 
 type Props = { product: Product };
 
-function formatCents(cents: number) {
-  return `$${(cents / 100).toFixed(2)}`;
-}
-
-export default function ProductCard({ product: p }: Props) {
-  const href = `/products/${p.slug ?? p.id}`;
+export default function ProductCard({ product }: Props) {
+  const p = product;
 
   return (
-    <div className="rounded-lg border bg-white shadow-sm overflow-hidden">
-      <img
-        src={p.image || "/products/missing.jpg"}
-        alt={p.title ?? p.name}
-        className="w-full h-48 object-contain bg-white rounded-t"
-        loading="lazy"
-      />
-
-      <div className="p-3">
-        <h3 className="text-sm font-medium line-clamp-2">
-          {p.title ?? p.name}
-        </h3>
-
-        {p.subtitle && (
-          <p className="mt-1 text-gray-600 text-sm">{p.subtitle}</p>
-        )}
-
-        <p className="mt-2 font-semibold">{formatCents(p.price)}</p>
-
-        <div className="mt-3">
-          <Link
-            href={href}
-            className="inline-block text-sm text-green-700 hover:text-green-800"
-          >
-            View
-          </Link>
+    <div className="rounded-2xl border p-4 shadow-sm">
+      <Link href={`/products/${p.slug}`} className="block group">
+        <div className="aspect-square w-full overflow-hidden rounded-xl bg-white">
+          <Image
+            src={p.image}
+            alt={p.title}
+            width={800}
+            height={800}
+            sizes="(min-width:1024px) 300px, 45vw"
+            className="h-full w-full object-contain transition-transform group-hover:scale-[1.02]"
+            priority={false}
+          />
         </div>
-      </div>
+
+        <h3 className="mt-3 font-semibold">{p.title}</h3>
+        <p className="text-sm text-gray-600">{p.subtitle}</p>
+        <p className="mt-1 font-semibold">{money(p.price)}</p>
+      </Link>
+
+      <button
+        onClick={() => addToCart(p.slug, 1)}
+        className="mt-3 w-full rounded-xl bg-green-700 px-4 py-2 text-white hover:bg-green-800"
+      >
+        Add to Cart
+      </button>
     </div>
   );
 }
