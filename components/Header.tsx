@@ -6,12 +6,12 @@ export default function Header() {
     <header className="border-b bg-white">
       <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-3">
-          {/* Your repo shows the logo at /public/logo-with-tagline.png */}
+          {/* Logo under /public */}
           <Image
             src="/logo-with-tagline.png"
             alt="Nature's Way Soil"
-            width={64}
-            height={64}
+            width={128}
+            height={40}
             priority
           />
           <span className="sr-only">Nature's Way Soil</span>
