@@ -1,8 +1,8 @@
 // components/ProductCard.tsx
 import Image from "next/image";
 import Link from "next/link";
-import type { Product } from "../data/products";
-import { money } from "../data/products";
+import type { Product } from "../lib/products";
+import { money } from "../lib/products";
 import { addToCart } from "../lib/cart-store";
 
 type Props = { product: Product };
@@ -21,7 +21,6 @@ export default function ProductCard({ product }: Props) {
             height={800}
             sizes="(min-width:1024px) 300px, 45vw"
             className="h-full w-full object-contain transition-transform group-hover:scale-[1.02]"
-            priority={false}
           />
         </div>
 
@@ -39,3 +38,4 @@ export default function ProductCard({ product }: Props) {
     </div>
   );
 }
+
