@@ -1,6 +1,8 @@
 // /data/products.ts
 // Copy-paste this entire file
 
+export const PRODUCTS: Product[] = [ /* … */ ];
+export default PRODUCTS;
 export type Product = {
   id: string;
   title: string;
