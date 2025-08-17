@@ -15,7 +15,7 @@ export const products: Product[] = [
     title: "Dog Urine Neutralizer — 1 gal",
     subtitle: "Pet-safe spot repair & odor control",
     price: 39.99,
-    image: "https://placehold.co/800x800?text=Dog+Urine+Neutralizer+%26+Lawn+Reviver",
+    image: "https://m.media-amazon.com/images/I/61ll2EiLAJL._AC_UL320_.jpg",
     active: true,
   },
   {
@@ -23,7 +23,7 @@ export const products: Product[] = [
     title: "Liquid Bone Meal Fertilizer — 32 oz",
     subtitle: "Fast phosphorus + calcium",
     price: 24.99,
-    image: "https://placehold.co/800x800?text=Liquid+Bone+Meal+32oz",
+    image: "https://m.media-amazon.com/images/I/615mJs9XccL._AC_UL320_.jpg",
     active: true,
   },
   {
@@ -31,7 +31,7 @@ export const products: Product[] = [
     title: "Liquid Kelp Fertilizer — 32 oz",
     subtitle: "Natural hormones & micros",
     price: 24.99,
-    image: "https://placehold.co/800x800?text=Liquid+Kelp+32oz",
+    image: "https://m.media-amazon.com/images/I/510ui3CBLbL._AC_UL320_.jpg",
     active: true,
   },
   {
@@ -39,7 +39,7 @@ export const products: Product[] = [
     title: "Hay & Pasture Liquid Fertilizer — 1 gal",
     subtitle: "Horse-safe pasture nutrition",
     price: 49.99,
-    image:"https://placehold.co/800x800?text=Hay+%26+Pasture+1gal",
+    image: "https://m.media-amazon.com/images/I/61qsUDP+WuL._AC_UL320_.jpg",
     active: true,
   },
 ];
@@ -50,6 +50,4 @@ export const activeProducts = products.filter(p => p.active !== false);
 export function getProduct(slug: string) {
   return activeProducts.find(p => p.slug === slug) ?? null;
 }
-
-
 
