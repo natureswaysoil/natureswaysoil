@@ -1,112 +1,80 @@
-// components/ChatWidget.tsx
 import { useState } from "react";
 
-type Role = "user" | "assistant";
-type Msg = { role: Role; content: string };
+type ChatMsg = { role: "user" | "assistant"; content: string };
 
 export default function ChatWidget() {
-  const [open, setOpen] = useState(false);
-  const [msgs, setMsgs] = useState<Msg[]>([
+  // 1) Make the state strongly typed
+  const [msgs, setMsgs] = useState<ChatMsg[]>([
     { role: "assistant", content: "Hi! How can I help?" },
   ]);
   const [input, setInput] = useState("");
 
-  async function send() {
-    const text = input.trim();
-    if (!text) return;
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!input.trim()) return;
 
-    const userMsg: Msg = { role: "user", content: text };
-    setMsgs((prev) => [...prev, userMsg]);
+    // 2) Build a ChatMsg, not a generic { role: string, ... }
+    const userMsg: ChatMsg = { role: "user", content: input };
+
+    // 3) Now `next` is correctly inferred as ChatMsg[]
+    const next = [...msgs, userMsg];
+    setMsgs(next);
     setInput("");
 
     try {
-      // Optional backend call; if your /api/ai/chat isn’t set up, we fall back gracefully.
+      // Call your API route (adjust the path if yours differs)
       const res = await fetch("/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: [...msgs, userMsg] }),
+        body: JSON.stringify({ messages: next }),
       });
+      const data = await res.json();
 
-      let reply = "Okay!";
-      if (res.ok) {
-        const data = await res.json().catch(() => null);
-        reply = (data?.reply as string) ?? reply;
-      } else {
-        reply = "I'm offline right now, but I’ll get back to you.";
-      }
+      const replyText =
+        data?.reply ?? data?.message ?? data?.content ?? "Okay.";
 
-      const botMsg: Msg = { role: "assistant", content: reply };
-      setMsgs((prev) => [...prev, botMsg]);
+      const assistantMsg: ChatMsg = { role: "assistant", content: replyText };
+      setMsgs((prev) => [...prev, assistantMsg]);
     } catch {
       setMsgs((prev) => [
         ...prev,
-        { role: "assistant", content: "I'm offline right now, but I’ll get back to you." },
+        {
+          role: "assistant",
+          content: "Sorry—couldn’t reach the chat service just now.",
+        },
       ]);
     }
   }
 
   return (
-    <div className="fixed bottom-4 right-4 z-50">
-      {!open ? (
-        <button
-          onClick={() => setOpen(true)}
-          className="rounded-full bg-green-700 text-white px-4 py-2 shadow"
-        >
-          Chat
+    <div className="fixed bottom-4 right-4 w-80 rounded-2xl bg-white border shadow-lg">
+      <div className="p-3 text-sm font-semibold">Chat</div>
+
+      <div className="p-3 space-y-2 h-64 overflow-y-auto text-sm">
+        {msgs.map((m, i) => (
+          <div key={i} className={m.role === "user" ? "text-right" : ""}>
+            <span className="inline-block max-w-[85%] rounded-xl px-3 py-2 bg-gray-100">
+              {m.content}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      <form onSubmit={onSubmit} className="flex gap-2 p-3 border-t">
+        <input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Ask a question…"
+          className="flex-1 rounded-xl border px-3 py-2 text-sm"
+        />
+        <button className="rounded-xl bg-green-700 text-white px-3 py-2 text-sm">
+          Send
         </button>
-      ) : (
-        <div className="w-80 h-96 rounded-xl border shadow bg-white flex flex-col">
-          <div className="flex items-center justify-between p-2 border-b">
-            <div className="font-semibold">Help</div>
-            <button onClick={() => setOpen(false)} className="text-sm text-gray-500">
-              ✕
-            </button>
-          </div>
-
-          <div className="flex-1 overflow-auto p-3 space-y-2">
-            {msgs.map((m, i) => (
-              <div
-                key={i}
-                className={
-                  m.role === "user"
-                    ? "text-right"
-                    : "text-left"
-                }
-              >
-                <span
-                  className={
-                    "inline-block rounded-lg px-3 py-2 " +
-                    (m.role === "user"
-                      ? "bg-green-600 text-white"
-                      : "bg-gray-100 text-gray-800")
-                  }
-                >
-                  {m.content}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          <div className="p-2 border-t flex gap-2">
-            <input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && send()}
-              placeholder="Type a message…"
-              className="flex-1 border rounded px-2 py-1"
-            />
-            <button
-              onClick={send}
-              className="bg-green-700 text-white rounded px-3 py-1"
-            >
-              Send
-            </button>
-          </div>
-        </div>
-      )}
+      </form>
     </div>
   );
 }
+
 
 
 
