@@ -1,80 +1,185 @@
+// /pages/index.tsx
+import React, { useMemo, useState } from "react";
 import Head from "next/head";
-import Link from "next/link";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
-import { products } from "@/data/products";
+
+// IMPORTANT: keep these paths exactly as shown
+import { PRODUCTS, type Product } from "../data/products";
+import Cart, { type CartItem } from "../components/Cart";
+import ChatWidget from "../components/ChatWidget";
+
+function dollars(cents: number) {
+  return (cents / 100).toFixed(2);
+}
 
 export default function Home() {
-  const featured = products.slice(0, 4); // first few items
+  const [cartOpen, setCartOpen] = useState(false);
+  const [items, setItems] = useState<CartItem[]>([]);
+
+  // --- Featured selection rules:
+  // 1) show products with featured === true & active === true
+  // 2) if none are flagged, fallback to the first 3 active products
+  const featured: Product[] = useMemo(() => {
+    const active = PRODUCTS.filter(p => p.active);
+    const flagged = active.filter(p => p.featured);
+    return (flagged.length ? flagged : active).slice(0, 3);
+  }, []);
+
+  function addToCart(p: Product) {
+    setItems(prev => {
+      const idx = prev.findIndex(i => i.id === p.id);
+      if (idx >= 0) {
+        const copy = [...prev];
+        copy[idx] = { ...copy[idx], qty: copy[idx].qty + 1 };
+        return copy;
+      }
+      return [...prev, { id: p.id, name: p.name, price: p.price, qty: 1 }];
+    });
+    setCartOpen(true);
+  }
+
+  function updateQty(id: string, qty: number) {
+    setItems(prev =>
+      prev
+        .map(i => (i.id === id ? { ...i, qty: Math.max(1, qty) } : i))
+        .filter(i => i.qty > 0)
+    );
+  }
+
+  function remove(id: string) {
+    setItems(prev => prev.filter(i => i.id !== id));
+  }
+
+  const subtotal = useMemo(
+    () => items.reduce((sum, i) => sum + i.price * i.qty, 0),
+    [items]
+  );
+
   return (
     <>
       <Head>
         <title>Nature’s Way Soil — From our farm to your garden</title>
-        <meta name="description" content="Premium, pet-safe lawn & garden inputs powered by worm castings and biochar." />
+        <meta
+          name="description"
+          content="Premium organic soil blends enriched with biochar, worm castings & mycorrhizae — made in the USA."
+        />
       </Head>
 
-      <Header />
+      {/* HERO */}
+      <header className="w-full bg-[#0f3d2e] text-white">
+        <div className="mx-auto max-w-6xl px-4 py-14 grid gap-8 md:grid-cols-2 items-center">
+          <div>
+            <h1 className="text-3xl md:text-4xl font-semibold">
+              Nature’s Way Soil
+            </h1>
+            <p className="mt-3 text-white/80">
+              From our farm to your garden — premium organic soil blends
+              enriched with biochar, worm castings, & mycorrhizae.
+            </p>
+            <div className="mt-6 flex gap-3">
+              <a
+                href="#featured"
+                className="inline-flex items-center rounded-md bg-white px-4 py-2 text-[#0f3d2e] font-medium shadow"
+              >
+                View Featured
+              </a>
+              <a
+                href="/shop"
+                className="inline-flex items-center rounded-md border border-white/40 px-4 py-2 font-medium"
+              >
+                View All Products
+              </a>
+            </div>
+            <ul className="mt-6 grid gap-2 text-sm text-white/80">
+              <li>• Biochar for aeration & nutrient retention</li>
+              <li>• Worm castings for living biology</li>
+              <li>• Mycorrhizae to supercharge roots</li>
+            </ul>
+          </div>
+          <div className="justify-self-center">
+            {/* If you have a hero image: /public/soil-bag-hero.png */}
+            <img
+              src="/soil-bag-hero.png"
+              alt="Nature’s Way Soil"
+              className="w-full max-w-sm rounded-lg shadow-lg"
+              onError={(e) => {
+                // invisible fallback, keeps layout tidy if missing
+                (e.currentTarget as HTMLImageElement).style.opacity = "0";
+              }}
+            />
+          </div>
+        </div>
+      </header>
 
-      <main className="bg-white text-gray-900">
-        {/* Hero */}
-        <section className="mx-auto max-w-6xl px-4 py-12">
-          <h1 className="text-3xl sm:text-5xl font-bold">
-            Premium, Pet-Safe Lawn & Garden Inputs
-          </h1>
-          <p className="mt-4 text-gray-700 max-w-3xl">
-            From our family farm to your garden — clean, effective inputs made with worm castings,
-            activated biochar, and living microbes.
-          </p>
-          <div className="mt-6 flex gap-4">
-            <Link href="/products" className="px-6 py-3 rounded-2xl bg-green-700 text-white">
-              Shop products
-            </Link>
-            <Link href="/policy" className="px-6 py-3 rounded-2xl border border-gray-300">
-              See refund
-            </Link>
+      {/* FEATURED */}
+      <main className="mx-auto max-w-6xl px-4">
+        <section id="featured" className="py-12">
+          <div className="flex items-end justify-between">
+            <h2 className="text-2xl font-semibold">Featured</h2>
+            <a href="/shop" className="text-[#0f3d2e] hover:underline">
+              View all
+            </a>
           </div>
 
-          {/* One simple policy sentence (no more little boxes) */}
-          <p className="mt-6 text-sm text-gray-700">
-            No-return refund: If you’re not happy, we’ll refund you. No return label, no hassle.
-          </p>
-        </section>
-
-        {/* Featured grid */}
-        <section className="mx-auto max-w-6xl px-4 pb-12">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold">Featured products</h2>
-            <Link href="/products" className="text-sm text-green-700">View all</Link>
-          </div>
-
-          <ul className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {featured.map(p => (
-              <li key={p.slug} className="rounded-2xl border hover:shadow-sm">
-                {/* images from /public/products/... */}
-                <img
-                  src={p.image}
-                  alt={p.title}
-                  className="w-full h-48 object-contain bg-white rounded-t-2xl"
-                  loading="lazy"
-                />
-                <div className="p-4">
-                  <h3 className="font-semibold">{p.title}</h3>
-                  <p className="mt-1 text-gray-600 text-sm">{p.subtitle}</p>
-                  <p className="mt-2 font-semibold">${p.price.toFixed(2)}</p>
-                  <Link
-                    href={`/products/${p.slug}`}
-                    className="mt-3 inline-block text-sm text-green-700"
-                  >
-                    View
-                  </Link>
+          <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {featured.map((p) => (
+              <article
+                key={p.id}
+                className="rounded-xl border border-black/10 bg-white shadow-sm"
+              >
+                <div className="aspect-[4/3] w-full overflow-hidden rounded-t-xl bg-neutral-50">
+                  <img
+                    src={p.image}
+                    alt={p.name}
+                    className="h-full w-full object-contain"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src =
+                        "/placeholder-product.png";
+                    }}
+                  />
                 </div>
-              </li>
+                <div className="p-4">
+                  <h3 className="font-medium">{p.name}</h3>
+                  {!!p.subtitle && (
+                    <p className="mt-1 text-sm text-neutral-600">{p.subtitle}</p>
+                  )}
+                  <div className="mt-4 flex items-center justify-between">
+                    <span className="text-lg font-semibold">
+                      ${dollars(p.price)}
+                    </span>
+                    <button
+                      onClick={() => addToCart(p)}
+                      className="rounded-md bg-[#0f3d2e] px-3 py-1.5 text-white"
+                    >
+                      Add to Cart
+                    </button>
+                  </div>
+                </div>
+              </article>
             ))}
-          </ul>
+          </div>
+
+          <div className="mt-8 text-center">
+            <a
+              href="/shop"
+              className="inline-flex items-center rounded-md border border-black/20 px-4 py-2"
+            >
+              Browse full catalog
+            </a>
+          </div>
         </section>
       </main>
 
-      <Footer />
+      {/* CART + CHAT */}
+      <Cart
+        open={cartOpen}
+        onClose={() => setCartOpen(false)}
+        items={items}
+        subtotal={subtotal}
+        updateQty={updateQty}
+        removeItem={remove}
+      />
+      <ChatWidget />
     </>
   );
 }
+
