@@ -1,87 +1,75 @@
 // /data/products.ts
-// Copy-paste this entire file
 
-export const PRODUCTS: Product[] = [ /* … */ ];
-export default PRODUCTS;
-export type Product = {
-  id: string;
-  title: string;
-  price: number;         // cents
-  image?: string;
-  subtitle?: string;
+// Base product you edit. `sku` is optional for you.
+export type ProductBase = {
   slug: string;
+  title: string;
+  subtitle: string;
+  price: number;   // number only (no $)
+  image: string;   // path under /public, e.g. "/products/dog-urine-1gal.jpg"
+  active: boolean;
+  sku?: string;    // optional: if you provide it, we use it
 };
 
-// IMPORTANT: the file BELOW must exist at: /data/data_products.ts
-// If your file is somewhere else, see the notes after this file.
-import * as RAW from "./data_products";
+// Product the app uses everywhere: sku is guaranteed
+export type Product = Omit<ProductBase, "sku"> & { sku: string };
 
-// Accept a few possible export shapes: PRODUCTS / default / products
-type AnyList = any[];
-const RAW_LIST: AnyList =
-  ((RAW as any).PRODUCTS as AnyList) ??
-  ((RAW as any).default as AnyList) ??
-  ((RAW as any).products as AnyList) ??
-  [];
+/** Edit this list as usual (no need to include sku unless you want to). */
+const RAW_PRODUCTS: ProductBase[] = [
+  {
+    slug: "dog-urine-1gal",
+    title: "Dog Urine Neutralizer – 1 gal",
+    subtitle: "Pet-safe spot repair & odor control",
+    price: 39.99,
+    image: "/products/dog-urine-1gal.jpg",
+    active: true,
+    // sku: "DOG-URINE-1GAL", // optionally set your own
+  },
+  {
+    slug: "liquid-bone-meal-32oz",
+    title: "Liquid Bone Meal Fertilizer — 32 oz",
+    subtitle: "Fast phosphorus + calcium",
+    price: 24.99,
+    image: "/products/liquid-bone-meal-32oz.jpg",
+    active: true,
+  },
+  {
+    slug: "liquid-kelp-32oz",
+    title: "Liquid Kelp Fertilizer — 32 oz",
+    subtitle: "Natural hormones & micros",
+    price: 24.99,
+    image: "/products/liquid-kelp-32oz.jpg",
+    active: true,
+  },
+  {
+    slug: "hay-pasture-1gal",
+    title: "Hay & Pasture Liquid Fertilizer — 1 gal",
+    subtitle: "Horse-safe pasture nutrition",
+    price: 49.99,
+    image: "/products/hay-pasture-1gal.jpg",
+    active: true,
+  },
+];
 
-// tiny helpers
-const toSlug = (s: string) =>
-  String(s || "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
-
-const toCents = (v: any) => {
-  const n = Number(v);
-  // if the CSV already provided cents, keep it; otherwise convert dollars->cents
-  if (!isFinite(n)) return 0;
-  return n > 0 && n < 1000 ? Math.round(n * 100) : Math.round(n);
-};
-
-const SEEN = new Set<string>();
-const list: Product[] = [];
-
-for (const r of RAW_LIST) {
-  const idRaw = r?.id ?? r?.sku ?? r?.ID ?? "";
-  const titleRaw = r?.title ?? r?.name ?? r?.Title ?? "";
-  const priceRaw = r?.price ?? r?.Price ?? r?.["Selling Price"] ?? 0;
-
-  const id = String(idRaw).trim();
-  const title = String(titleRaw).trim();
-  const price = toCents(priceRaw);
-
-  // only keep active + complete rows if the generator included flags
-  const active = (r?.active ?? r?.Active ?? r?.status ?? r?.Status) ?? true;
-  if (!active) continue;
-
-  if (!id || !title || !price) continue;
-
-  // ensure unique id
-  let uid = id;
-  let i = 2;
-  while (SEEN.has(uid)) uid = `${id}-${i++}`;
-  SEEN.add(uid);
-
-  list.push({
-    id: uid,
-    title,
-    price,
-    image: r?.image ?? r?.Image ?? r?.img ?? undefined,
-    subtitle: r?.subtitle ?? r?.Subtitle ?? undefined,
-    slug: toSlug(title),
-  });
+/** If you didn't specify sku, generate one from slug and a sequence number. */
+function makeSku(p: ProductBase, index: number): string {
+  if (p.sku && p.sku.trim()) return p.sku.trim();
+  const base = p.slug.replace(/[^a-z0-9]/gi, "").toUpperCase();
+  const seq = String(index + 1).padStart(3, "0");
+  return `NWS-${base}-${seq}`;
 }
 
-export const PRODUCTS: Product[] = list;
+/** This is what the rest of the app imports. */
+export const PRODUCTS: Product[] = RAW_PRODUCTS.map((p, i) => ({
+  ...p,
+  sku: makeSku(p, i),
+}));
 
+export const activeProducts = PRODUCTS.filter((p) => p.active);
 
-for (const p of PRODUCTS) {
-  if (!p.id || !p.title) {
-    console.warn("[data_products] Missing id/title:", p);
-  }
-  if (typeof p.price !== "number" || p.price <= 0) {
-    console.warn("[data_products] Bad price (must be cents > 0):", p);
-  }
+export function getProduct(slug: string): Product | null {
+  return PRODUCTS.find((p) => p.slug === slug) ?? null;
 }
 
+export type { Product as DefaultProduct };
 
