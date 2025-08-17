@@ -75,4 +75,13 @@ for (const r of RAW_LIST) {
 export const PRODUCTS: Product[] = list;
 
 
+for (const p of PRODUCTS) {
+  if (!p.id || !p.title) {
+    console.warn("[data_products] Missing id/title:", p);
+  }
+  if (typeof p.price !== "number" || p.price <= 0) {
+    console.warn("[data_products] Bad price (must be cents > 0):", p);
+  }
+}
+
 
