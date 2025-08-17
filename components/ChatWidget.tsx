@@ -1,122 +1,110 @@
-'use client';
-import { useState, useRef, useEffect } from 'react';
+// components/ChatWidget.tsx
+import { useState } from "react";
 
-type Role = 'user' | 'assistant';
+type Role = "user" | "assistant";
 type Msg = { role: Role; content: string };
 
 export default function ChatWidget() {
   const [open, setOpen] = useState(false);
-  const [msgs, setMsgs] = useState<Msg[]>([]);
-  const [input, setInput] = useState('');
-  const [busy, setBusy] = useState(false);
-  const listRef = useRef<HTMLDivElement | null>(null);
-
-  // auto-scroll to newest message
-  useEffect(() => {
-    if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
-  }, [msgs, open]);
+  const [msgs, setMsgs] = useState<Msg[]>([
+    { role: "assistant", content: "Hi! How can I help?" },
+  ]);
+  const [input, setInput] = useState("");
 
   async function send() {
     const text = input.trim();
-    if (!text || busy) return;
+    if (!text) return;
 
-    const next: Msg[] = [...msgs, { role: 'user', content: text }];
-    setMsgs(next);
-    setInput('');
-    setBusy(true);
+    const userMsg: Msg = { role: "user", content: text };
+    setMsgs((prev) => [...prev, userMsg]);
+    setInput("");
 
     try {
-      const r = await fetch('/api/ai/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: next }),
+      // Optional backend call; if your /api/ai/chat isn’t set up, we fall back gracefully.
+      const res = await fetch("/api/ai/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: [...msgs, userMsg] }),
       });
 
-      const j = await r.json().catch(() => ({}));
-      const replyText =
-        j?.text ??
-        j?.reply ??
-        (typeof j === 'string' ? j : 'Thanks! We’ll be in touch.');
+      let reply = "Okay!";
+      if (res.ok) {
+        const data = await res.json().catch(() => null);
+        reply = (data?.reply as string) ?? reply;
+      } else {
+        reply = "I'm offline right now, but I’ll get back to you.";
+      }
 
-      const reply: Msg = { role: 'assistant', content: String(replyText) };
-      setMsgs((prev) => [...prev, reply]);
+      const botMsg: Msg = { role: "assistant", content: reply };
+      setMsgs((prev) => [...prev, botMsg]);
     } catch {
       setMsgs((prev) => [
         ...prev,
-        { role: 'assistant', content: 'Sorry—AI is unavailable right now.' },
+        { role: "assistant", content: "I'm offline right now, but I’ll get back to you." },
       ]);
-    } finally {
-      setBusy(false);
     }
   }
 
-  function onKey(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'Enter') send();
-  }
-
   return (
-    <>
-      {/* Toggle button */}
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="fixed bottom-4 right-4 z-40 px-4 py-3 rounded-2xl bg-green-700 text-white shadow-lg"
-        aria-expanded={open}
-        aria-controls="nws-chat"
-      >
-        {open ? 'Close chat' : 'Chat with us'}
-      </button>
-
-      {/* Chat panel */}
-      {open && (
-        <div
-          id="nws-chat"
-          className="fixed bottom-20 right-4 z-40 w-[min(92vw,380px)] h-[520px] bg-white border rounded-2xl shadow-xl flex flex-col"
+    <div className="fixed bottom-4 right-4 z-50">
+      {!open ? (
+        <button
+          onClick={() => setOpen(true)}
+          className="rounded-full bg-green-700 text-white px-4 py-2 shadow"
         >
-          <div className="px-4 py-3 border-b font-semibold">
-            Nature’s Way Soil Assistant
+          Chat
+        </button>
+      ) : (
+        <div className="w-80 h-96 rounded-xl border shadow bg-white flex flex-col">
+          <div className="flex items-center justify-between p-2 border-b">
+            <div className="font-semibold">Help</div>
+            <button onClick={() => setOpen(false)} className="text-sm text-gray-500">
+              ✕
+            </button>
           </div>
 
-          <div
-            ref={listRef}
-            className="flex-1 overflow-y-auto p-3 space-y-3 text-sm"
-          >
+          <div className="flex-1 overflow-auto p-3 space-y-2">
             {msgs.map((m, i) => (
-              <div key={i} className={m.role === 'user' ? 'text-right' : ''}>
-                <div
-                  className={`inline-block px-3 py-2 rounded-xl ${
-                    m.role === 'user'
-                      ? 'bg-green-700 text-white'
-                      : 'bg-gray-100'
-                  }`}
+              <div
+                key={i}
+                className={
+                  m.role === "user"
+                    ? "text-right"
+                    : "text-left"
+                }
+              >
+                <span
+                  className={
+                    "inline-block rounded-lg px-3 py-2 " +
+                    (m.role === "user"
+                      ? "bg-green-600 text-white"
+                      : "bg-gray-100 text-gray-800")
+                  }
                 >
                   {m.content}
-                </div>
+                </span>
               </div>
             ))}
-            {busy && (
-              <div className="text-gray-500">Assistant is typing…</div>
-            )}
           </div>
 
-          <div className="p-3 border-t flex gap-2">
+          <div className="p-2 border-t flex gap-2">
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyDown={onKey}
-              placeholder="Ask about products, shipping, refunds…"
-              className="flex-1 border rounded-xl px-3 py-2"
+              onKeyDown={(e) => e.key === "Enter" && send()}
+              placeholder="Type a message…"
+              className="flex-1 border rounded px-2 py-1"
             />
             <button
               onClick={send}
-              disabled={busy}
-              className="px-4 py-2 rounded-2xl bg-green-700 text-white disabled:opacity-60"
+              className="bg-green-700 text-white rounded px-3 py-1"
             >
               Send
             </button>
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }
 
