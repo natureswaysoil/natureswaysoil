@@ -3,7 +3,7 @@
 // Ensures the UI always has name, title, price (cents), image fallback,
 // and a guaranteed `slug` for product links.
 
-import * as RAW from "./data_products";
+import * as RAW from "../data_products";
 
 type MaybeAny = any;
 const RAW_LIST: MaybeAny[] =
