@@ -11,7 +11,7 @@ import {
 } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 
-import { getProduct } from '@/lib/products';
+import { getProduct, type Product } from '../../data/products';
 import { readCart, clearCart } from '@/lib/cart-store';
 import { calculate } from '@/lib/cart'; // we won't import the Cart type on purpose to stay flexible
 
