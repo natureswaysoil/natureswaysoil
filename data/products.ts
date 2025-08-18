@@ -59,12 +59,4 @@ export function getProduct(slug: string): Product | null {
   return PRODUCTS.find((p) => p.slug === slug) ?? null;
 }
 
-// (Optional helpers; safe to include or skip)
-export function getActiveProducts(): Product[] {
-  return PRODUCTS.filter((p) => p.active);
-}
-export function getProductBySku(sku: string): Product | null {
-  return PRODUCTS.find((p) => p.sku === sku) ?? null;
-}
-export default getProduct;
 
