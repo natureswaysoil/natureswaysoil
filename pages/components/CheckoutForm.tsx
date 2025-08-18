@@ -1,7 +1,6 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/router';
-
 import {
   Elements,
   PaymentElement,
@@ -11,9 +10,9 @@ import {
 } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 
-import { getProduct, type Product } from '../../data/products';
+import { getProduct, type Product } from '../data/products'; // <-- fixed path to match components folder
 import { readCart, clearCart } from '@/lib/cart-store';
-import { calculate } from '@/lib/cart'; // we won't import the Cart type on purpose to stay flexible
+import { calculate } from '@/lib/cart';
 
 // ---------------- Stripe init ----------------
 const pk = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY as string | undefined;
@@ -213,7 +212,6 @@ export default function CheckoutForm() {
   return (
     <div className="max-w-lg mx-auto rounded-2xl border p-6">
       <h1 className="text-2xl font-bold">Checkout</h1>
-
       <div className="mt-4 mb-6 text-sm text-gray-700">
         <ul className="space-y-1">
           {items.map((it) => (
@@ -228,10 +226,8 @@ export default function CheckoutForm() {
           <span>${(amountCents / 100).toFixed(2)}</span>
         </div>
       </div>
-
       {status && <div className="mb-4 text-green-700 text-sm">{status}</div>}
       {creating && <div className="text-sm text-gray-600">Starting secure checkout…</div>}
-
       {clientSecret && (
         <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'stripe' } }}>
           <InnerCheckout onSuccess={onSuccess} />
