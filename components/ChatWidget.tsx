@@ -1,121 +1,92 @@
-import { useState } from "react";
-import Image from "next/image";
 
-/** Allow only these two literal values */
-type ChatRole = "user" | "assistant";
+'use client';
 
-/** Single chat message */
+import { useState, FormEvent } from 'react';
+
+/** Chat message shape used everywhere in this file. */
 export type ChatMsg = {
-  role: ChatRole;
+  role: 'user' | 'assistant';
   content: string;
 };
 
 export default function ChatWidget() {
   const [msgs, setMsgs] = useState<ChatMsg[]>([]);
-  const [input, setInput] = useState("");
-  const [sending, setSending] = useState(false);
+  const [input, setInput] = useState('');
 
-  async function sendMessage() {
-    const trimmed = input.trim();
-    if (!trimmed) return;
+  async function onSend(e: FormEvent) {
+    e.preventDefault();
+    if (!input.trim()) return;
 
-    // build a strongly typed message first
-    const userMsg: ChatMsg = { role: "user", content: trimmed };
+    // ✅ Make the new message explicitly a ChatMsg so role is the literal 'user'
+    const userMsg: ChatMsg = { role: 'user', content: input };
 
-    // append it via functional setState to keep the type
-    setMsgs((prev) => [...prev, userMsg]);
-    setInput("");
-    setSending(true);
+    // ✅ Use functional setState to avoid stale closure and keep the array typed
+    setMsgs(prev => [...prev, userMsg]);
+    setInput('');
 
     try {
-      // call your (stub) API – you can swap this later for real OpenAI
-      const res = await fetch("/api/ai/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: [...msgs, userMsg] }),
+      // Send the *full* transcript (including the new user message) to your API
+      const res = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: [...msgs, userMsg] })
       });
 
-      if (!res.ok) throw new Error(`Chat API ${res.status}`);
+      // Be tolerant to different API shapes
+      const data = await res.json();
+      const replyText: string =
+        data?.reply ?? data?.message ?? data?.content ?? 'OK';
 
-      const data = (await res.json()) as { reply: string };
-      const assistantMsg: ChatMsg = { role: "assistant", content: data.reply };
-
-      setMsgs((prev) => [...prev, assistantMsg]);
-    } catch (err) {
-      const assistantMsg: ChatMsg = {
-        role: "assistant",
-        content:
-          "Sorry—something went wrong reaching the chat service. Please try again.",
+      const botMsg: ChatMsg = { role: 'assistant', content: replyText };
+      setMsgs(prev => [...prev, botMsg]);
+    } catch {
+      const errMsg: ChatMsg = {
+        role: 'assistant',
+        content: 'Sorry, something went wrong. Please try again.'
       };
-      setMsgs((prev) => [...prev, assistantMsg]);
-      // eslint-disable-next-line no-console
-      console.error(err);
-    } finally {
-      setSending(false);
-    }
-  }
-
-  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-      e.preventDefault();
-      void sendMessage();
+      setMsgs(prev => [...prev, errMsg]);
     }
   }
 
   return (
-    <div className="mt-16 rounded-2xl border bg-white/70 p-4 shadow-sm backdrop-blur">
-      <div className="mb-3 flex items-center gap-3">
-        <Image
-          src="/logo-with-tagline.png"
-          width={32}
-          height={32}
-          alt="Nature's Way Soil logo"
-        />
-        <h3 className="text-lg font-semibold">Ask us anything</h3>
-      </div>
-
-      <div className="mb-3 max-h-64 space-y-3 overflow-auto pr-1">
-        {msgs.length === 0 && (
-          <p className="text-sm text-gray-500">
-            Try: <em>“Which product should I use for dog urine spots?”</em>
-          </p>
-        )}
-
+    <div className="max-w-xl w-full mx-auto p-4 border rounded-lg">
+      <div className="space-y-2 max-h-72 overflow-auto mb-3">
         {msgs.map((m, i) => (
           <div
             key={i}
-            className={`rounded-lg p-2 text-sm ${
-              m.role === "user"
-                ? "bg-emerald-50 text-emerald-900"
-                : "bg-gray-50 text-gray-900"
-            }`}
+            className={m.role === 'user' ? 'text-right' : 'text-left'}
           >
-            <span className="mr-2 inline-block rounded px-1.5 py-0.5 text-xs font-semibold ring-1 ring-inset ring-black/5">
-              {m.role === "user" ? "You" : "Assistant"}
+            <span
+              className={
+                m.role === 'user'
+                  ? 'inline-block bg-green-600 text-white px-3 py-1 rounded-md'
+                  : 'inline-block bg-gray-200 text-gray-900 px-3 py-1 rounded-md'
+              }
+            >
+              {m.content}
             </span>
-            {m.content}
           </div>
         ))}
+        {msgs.length === 0 && (
+          <div className="text-gray-500 text-sm">Ask me something…</div>
+        )}
       </div>
 
-      <div className="flex items-end gap-2">
-        <textarea
+      <form onSubmit={onSend} className="flex gap-2">
+        <input
           value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Type a question and press ⌘/Ctrl+Enter to send"
-          className="min-h-[44px] flex-1 resize-y rounded-lg border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
+          onChange={e => setInput(e.target.value)}
+          placeholder="Type your message"
+          className="flex-1 border rounded-md px-3 py-2"
         />
         <button
-          onClick={() => void sendMessage()}
-          disabled={sending || !input.trim()}
-          className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white shadow-sm disabled:opacity-50"
+          type="submit"
+          className="px-4 py-2 rounded-md bg-green-700 text-white"
         >
-          {sending ? "Sending…" : "Send"}
+          Send
         </button>
-      </div>
+      </form>
     </div>
   );
 }
-
 
