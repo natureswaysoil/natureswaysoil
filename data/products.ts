@@ -54,9 +54,6 @@ export const PRODUCTS: Product[] = [
 export const getProduct = (slug: string): Product | null =>
   PRODUCTS.find((p) => p.slug === slug) ?? null;
 // ---------------------------------------------------------------------------
-// Look up a product by slug (returns null if not found)
-export function getProduct(slug: string): Product | null {
-  return PRODUCTS.find((p) => p.slug === slug) ?? null;
-}
+
 
 
