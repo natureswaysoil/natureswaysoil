@@ -53,4 +53,18 @@ export const PRODUCTS: Product[] = [
 // Returns the product with the given slug, or null if it doesn't exist.
 export const getProduct = (slug: string): Product | null =>
   PRODUCTS.find((p) => p.slug === slug) ?? null;
+// ---------------------------------------------------------------------------
+// Look up a product by slug (returns null if not found)
+export function getProduct(slug: string): Product | null {
+  return PRODUCTS.find((p) => p.slug === slug) ?? null;
+}
+
+// (Optional helpers; safe to include or skip)
+export function getActiveProducts(): Product[] {
+  return PRODUCTS.filter((p) => p.active);
+}
+export function getProductBySku(sku: string): Product | null {
+  return PRODUCTS.find((p) => p.sku === sku) ?? null;
+}
+export default getProduct;
 
