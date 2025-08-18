@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements, PaymentElement, useElements, useStripe, AddressElement } from "@stripe/react-stripe-js";
 import { calculate, Cart } from "@/lib/cart";
-import { getProduct } from "../data/products";
+import { getProduct, type Product } from "../data/products";
 import { readCart, clearCart } from "@/lib/cart-store";
 import type { Product as ProductWithSku } from "../data/products";
 
