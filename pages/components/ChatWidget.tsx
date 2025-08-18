@@ -1,104 +1,111 @@
-// pages/components/ChatWidget.tsx
-import { useState } from "react";
+ // pages/components/ChatWidget.tsx
+import React, { useState, useRef, useEffect } from "react";
 
-// Strongly-typed chat message: role must be "user" or "assistant"
-type ChatMsg = {
-  role: "user" | "assistant";
-  content: string;
-};
+type Role = "user" | "assistant";
+export type ChatMsg = { role: Role; content: string };
 
 export default function ChatWidget() {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
-  const [msgs, setMsgs] = useState<ChatMsg[]>([]);
+  const [msgs, setMsgs] = useState<ChatMsg[]>([
+    { role: "assistant", content: "Hi! How can I help?" },
+  ]);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  async function send() {
-    // don't send empty messages
+  // focus input when opening
+  useEffect(() => {
+    if (open) inputRef.current?.focus();
+  }, [open]);
+
+  async function sendMessage() {
     if (!input.trim()) return;
-
-    // Force the correct literal type for role so TS sees it as ChatMsg, not { role: string }
-    const next: ChatMsg[] = [...msgs, { role: "user", content: input }];
-    setMsgs(next);
+    const nextMsgs: ChatMsg[] = [...msgs, { role: "user", content: input }];
+    setMsgs(nextMsgs);
     setInput("");
 
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        // send messages in a shape your API expects (adjust if your endpoint differs)
-        body: JSON.stringify({ messages: next }),
+        body: JSON.stringify({ messages: nextMsgs }),
       });
 
       if (!res.ok) {
-        setMsgs((m) => [
-          ...m,
-          { role: "assistant", content: "Sorry — something went wrong." },
-        ]);
-        return;
+        throw new Error(await res.text());
       }
 
-      const data = await res.json();
-
-      // Try a few common shapes; adjust to match your API response
-      const replyText: string =
-        (data?.message?.content ??
-          data?.reply ??
-          data?.content ??
-          "").toString();
-
-      setMsgs((m) => [...m, { role: "assistant", content: replyText }]);
-    } catch {
-      setMsgs((m) => [
-        ...m,
-        { role: "assistant", content: "Network error — please try again." },
+      const data: { message: string } = await res.json();
+      setMsgs((prev) => [...prev, { role: "assistant", content: data.message }]);
+    } catch (err) {
+      setMsgs((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content:
+            "Sorry—something went wrong reaching the assistant. Please try again.",
+        },
       ]);
     }
   }
 
   return (
-    <div className="fixed right-4 bottom-4 z-50">
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className="rounded bg-green-700 px-3 py-2 text-white shadow hover:bg-green-800"
-      >
-        {open ? "Close chat" : "Chat"}
-      </button>
+    <div className="fixed bottom-4 right-4 z-50">
+      {!open ? (
+        <button
+          onClick={() => setOpen(true)}
+          className="rounded-full bg-emerald-600 text-white px-4 py-2 shadow hover:bg-emerald-700"
+        >
+          Chat
+        </button>
+      ) : (
+        <div className="w-[320px] h-[420px] bg-white border rounded-xl shadow-lg flex flex-col">
+          <div className="p-3 border-b flex items-center justify-between">
+            <strong>Assistant</strong>
+            <button
+              onClick={() => setOpen(false)}
+              className="text-sm text-gray-500 hover:text-gray-800"
+            >
+              ✕
+            </button>
+          </div>
 
-      {open && (
-        <div className="mt-2 w-80 rounded border bg-white p-3 shadow-xl">
-          <div className="max-h-64 space-y-2 overflow-y-auto text-sm">
+          <div className="flex-1 overflow-y-auto p-3 space-y-2">
             {msgs.map((m, i) => (
-              <div key={i} className={m.role === "user" ? "text-right" : ""}>
-                <span
-                  className={`inline-block rounded px-2 py-1 ${
-                    m.role === "user"
-                      ? "bg-green-600 text-white"
-                      : "bg-gray-200"
-                  }`}
-                >
-                  {m.content}
-                </span>
+              <div
+                key={i}
+                className={`max-w-[85%] rounded-lg px-3 py-2 ${
+                  m.role === "user"
+                    ? "ml-auto bg-emerald-600 text-white"
+                    : "mr-auto bg-gray-100 text-gray-900"
+                }`}
+              >
+                {m.content}
               </div>
             ))}
           </div>
 
-          <div className="mt-2 flex gap-2">
+          <form
+            className="border-t p-2 flex gap-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              sendMessage();
+            }}
+          >
             <input
+              ref={inputRef}
+              type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") send();
-              }}
-              placeholder="Ask something…"
-              className="flex-1 rounded border px-2 py-1"
+              placeholder="Type your message…"
+              className="flex-1 rounded-md border px-3 py-2 focus:outline-none focus:ring"
             />
             <button
-              onClick={send}
-              className="rounded bg-green-700 px-3 py-1 text-white hover:bg-green-800"
+              type="submit"
+              className="rounded-md bg-emerald-600 text-white px-3 py-2 hover:bg-emerald-700"
             >
               Send
             </button>
-          </div>
+          </form>
         </div>
       )}
     </div>
