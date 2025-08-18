@@ -49,4 +49,8 @@ export const PRODUCTS: Product[] = [
     sku: "NWS-128-HP"
   }
 ];
+// --- Single product lookup helper -------------------------------------------
+// Returns the product with the given slug, or null if it doesn't exist.
+export const getProduct = (slug: string): Product | null =>
+  PRODUCTS.find((p) => p.slug === slug) ?? null;
 
