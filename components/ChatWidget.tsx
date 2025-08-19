@@ -1,4 +1,6 @@
 
+import { useState, FormEvent } from 'react';
+
 // NOTE: renamed to avoid duplicate identifier errors
 export type ChatMessage = {
   role: 'user' | 'assistant';
