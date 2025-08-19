@@ -10,7 +10,12 @@ import {
 } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 
-import { getProduct, type Product } from '../data/products'; // <-- fixed path to match components folder
+// pages/components/CheckoutForm.tsx
+// Before:
+// import { getProduct, type Product } from '../lib/products';
+
+// After:
+import { getProduct, type Product } from '../../data/products'; // <-- fixed path to match components folder
 import { readCart, clearCart } from '@/lib/cart-store';
 import { calculate } from '@/lib/cart';
 
