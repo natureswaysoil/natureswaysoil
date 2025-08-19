@@ -21,7 +21,7 @@ export default function Shop() {
         copy[idx] = { ...copy[idx], qty: copy[idx].qty + 1 };
         return copy;
       }
-      return [...prev, { id: p.id, name: p.name, price: p.price, qty: 1 }];
+      return [...prev, { id: p.id, name: p.title, price: Math.round(p.price * 100), qty: 1 }];
     });
     setCartOpen(true);
   }
@@ -49,7 +49,7 @@ export default function Shop() {
               <div className="aspect-[4/3] w-full overflow-hidden rounded-t-xl bg-neutral-50">
                 <img
                   src={p.image}
-                  alt={p.name}
+                  alt={p.title}
                   className="h-full w-full object-contain"
                   onError={(e) => {
                     (e.currentTarget as HTMLImageElement).src =
@@ -58,13 +58,13 @@ export default function Shop() {
                 />
               </div>
               <div className="p-4">
-                <h3 className="font-medium">{p.name}</h3>
-                {!!p.subtitle && (
-                  <p className="mt-1 text-sm text-neutral-600">{p.subtitle}</p>
+                <h3 className="font-medium">{p.title}</h3>
+                {!!p.description && (
+                  <p className="mt-1 text-sm text-neutral-600">{p.description}</p>
                 )}
                 <div className="mt-4 flex items-center justify-between">
                   <span className="text-lg font-semibold">
-                    ${dollars(p.price)}
+                    ${p.price.toFixed(2)}
                   </span>
                   <button
                     onClick={() => addToCart(p)}
@@ -83,15 +83,18 @@ export default function Shop() {
         open={cartOpen}
         onClose={() => setCartOpen(false)}
         items={items}
-        subtotal={subtotal}
-        updateQty={(id, qty) =>
+        onUpdateQty={(id: string, qty: number) =>
           setItems(prev =>
             prev
               .map(i => (i.id === id ? { ...i, qty: Math.max(1, qty) } : i))
               .filter(i => i.qty > 0)
           )
         }
-        removeItem={(id) => setItems(prev => prev.filter(i => i.id !== id))}
+        onRemove={(id: string) => setItems(prev => prev.filter(i => i.id !== id))}
+        onCheckout={() => {
+          // Navigate to checkout or handle checkout logic
+          console.log("Checkout clicked");
+        }}
       />
     </>
   );
