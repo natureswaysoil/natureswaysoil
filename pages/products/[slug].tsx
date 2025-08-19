@@ -2,7 +2,7 @@ import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useState } from "react";
-import { getProduct, products } from "@/data/products";
+import { getProduct, PRODUCTS } from "@/data/products";
 
 export default function ProductDetail() {
   const router = useRouter();
@@ -42,7 +42,7 @@ export default function ProductDetail() {
 
         <div>
           <h1 className="text-3xl font-bold">{product.title}</h1>
-          {product.subtitle && <p className="mt-2 text-gray-600">{product.subtitle}</p>}
+          {product.description && <p className="mt-2 text-gray-600">{product.description}</p>}
           <p className="mt-4 text-2xl font-semibold">${product.price.toFixed(2)}</p>
 
           <div className="mt-6 flex items-center gap-3">
@@ -70,7 +70,7 @@ export default function ProductDetail() {
 }
 
 export async function getStaticPaths() {
-  return { paths: products.map(p => ({ params: { slug: p.slug } })), fallback: true };
+  return { paths: PRODUCTS.map((p: any) => ({ params: { slug: p.slug } })), fallback: true };
 }
 export async function getStaticProps() { return { props: {} }; }
 

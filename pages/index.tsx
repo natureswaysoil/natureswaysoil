@@ -26,13 +26,13 @@ export default function Home() {
 
   function addToCart(p: Product) {
     setItems(prev => {
-      const idx = prev.findIndex(i => i.id === p.id);
+      const idx = prev.findIndex(i => i.id === String(p.id));
       if (idx >= 0) {
         const copy = [...prev];
         copy[idx] = { ...copy[idx], qty: copy[idx].qty + 1 };
         return copy;
       }
-      return [...prev, { id: p.id, name: p.name, price: p.price, qty: 1 }];
+      return [...prev, { id: String(p.id), name: p.title, price: p.price, qty: 1 }];
     });
     setCartOpen(true);
   }
@@ -123,13 +123,13 @@ export default function Home() {
           <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {featured.map((p) => (
               <article
-                key={p.id}
+                key={p.slug}
                 className="rounded-xl border border-black/10 bg-white shadow-sm"
               >
                 <div className="aspect-[4/3] w-full overflow-hidden rounded-t-xl bg-neutral-50">
                   <img
                     src={p.image}
-                    alt={p.name}
+                    alt={p.title}
                     className="h-full w-full object-contain"
                     onError={(e) => {
                       (e.currentTarget as HTMLImageElement).src =
@@ -138,7 +138,7 @@ export default function Home() {
                   />
                 </div>
                 <div className="p-4">
-                  <h3 className="font-medium">{p.name}</h3>
+                  <h3 className="font-medium">{p.title}</h3>
                   {!!p.subtitle && (
                     <p className="mt-1 text-sm text-neutral-600">{p.subtitle}</p>
                   )}
@@ -174,9 +174,9 @@ export default function Home() {
         open={cartOpen}
         onClose={() => setCartOpen(false)}
         items={items}
-        subtotal={subtotal}
-        updateQty={updateQty}
-        removeItem={remove}
+        onUpdateQty={updateQty}
+        onRemove={remove}
+        onCheckout={() => {}}
       />
       <ChatWidget />
     </>
