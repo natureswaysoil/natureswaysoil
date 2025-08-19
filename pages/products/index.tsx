@@ -1,7 +1,7 @@
 import Head from "next/head";
 import { useRouter } from "next/router";
 import { useState } from "react";
-import { PRODUCTS as products } from "@/lib/products";
+import { PRODUCTS as products } from "@/data/products";
 import { addToCart, cartCount } from "@/lib/cart-store";
 
 export default function ProductsPage() {

@@ -3,7 +3,7 @@ import React, { useMemo, useState } from "react";
 import Head from "next/head";
 
 // IMPORTANT: keep these paths exactly as shown
-import { PRODUCTS, type Product } from "../lib/products";
+import { PRODUCTS, type Product } from "../data/products";
 import Cart, { type CartItem } from "../components/Cart";
 import ChatWidget from "../components/ChatWidget";
 
@@ -26,13 +26,14 @@ export default function Home() {
 
   function addToCart(p: Product) {
     setItems(prev => {
-      const idx = prev.findIndex(i => i.id === p.id.toString());
+      const productId = (p.id ?? 0).toString();
+      const idx = prev.findIndex(i => i.id === productId);
       if (idx >= 0) {
         const copy = [...prev];
         copy[idx] = { ...copy[idx], qty: copy[idx].qty + 1 };
         return copy;
       }
-      return [...prev, { id: p.id.toString(), name: p.title, price: p.price * 100, qty: 1 }];
+      return [...prev, { id: productId, name: p.title, price: p.price * 100, qty: 1 }];
     });
     setCartOpen(true);
   }
@@ -123,7 +124,7 @@ export default function Home() {
           <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {featured.map((p) => (
               <article
-                key={p.id}
+                key={p.slug}
                 className="rounded-xl border border-black/10 bg-white shadow-sm"
               >
                 <div className="aspect-[4/3] w-full overflow-hidden rounded-t-xl bg-neutral-50">

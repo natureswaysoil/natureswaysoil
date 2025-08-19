@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import type { Product } from "../lib/products";
+import type { Product } from "../data/products";
 
 type Props = { product: Product; onAdd?: (p: Product) => void };
 

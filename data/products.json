@@ -1,83 +1,110 @@
 [
   {
+    "id": 1,
     "slug": "natures-way-soil-organic-liquid-fertilizer-1-gallon",
     "title": "Nature's Way Soil Organic Liquid Fertilizer — 1 Gallon",
+    "subtitle": "Microbial-rich balanced fertilizer for gardens and lawns.",
     "description": "Microbial-rich balanced fertilizer for gardens and lawns.",
     "price": 20.99,
     "image": "/products/organic-liquid-1gal.jpg",
     "active": true,
+    "featured": true,
     "sku": "NWS-128-ORG"
   },
   {
+    "id": 2,
     "slug": "organic-tomato-liquid-fertilizer-1-gallon",
     "title": "Organic Tomato Liquid Fertilizer — 1 Gallon",
+    "subtitle": "Tomato-focused nutrients with beneficial microbes.",
     "description": "Tomato-focused nutrients with beneficial microbes.",
     "price": 24.99,
     "image": "/products/tomato-1gal.jpg",
     "active": true,
+    "featured": true,
     "sku": "NWS-128-TOM"
   },
   {
+    "id": 3,
     "slug": "liquid-kelp-fertilizer-1-gallon",
     "title": "Liquid Kelp Fertilizer — 1 Gallon",
+    "subtitle": "Seaweed extract for root vigor and stress tolerance.",
     "description": "Seaweed extract for root vigor and stress tolerance.",
     "price": 29.99,
     "image": "/products/kelp-1gal.jpg",
     "active": true,
+    "featured": true,
     "sku": "NWS-128-KELP"
   },
   {
+    "id": 4,
     "slug": "premium-soil-blend-2-cubic-feet",
     "title": "Premium Soil Blend — 2 Cubic Feet",
+    "subtitle": "Biochar-enriched organic soil mix with mycorrhizae.",
     "description": "Biochar-enriched organic soil mix with mycorrhizae.",
     "price": 39.99,
     "image": "/products/premium-soil-2cf.jpg",
     "active": true,
+    "featured": false,
     "sku": "NWS-CF2-PREM"
   },
   {
+    "id": 5,
     "slug": "worm-casting-fertilizer-1-gallon",
     "title": "Worm Casting Fertilizer — 1 Gallon",
+    "subtitle": "Pure worm castings liquid for organic growing.",
     "description": "Pure worm castings liquid for organic growing.",
     "price": 22.99,
     "image": "/products/worm-casting-1gal.jpg",
     "active": true,
+    "featured": false,
     "sku": "NWS-128-WORM"
   },
   {
+    "id": 6,
     "slug": "root-booster-organic-32-oz",
     "title": "Root Booster Organic — 32 oz",
+    "subtitle": "Concentrated root development formula.",
     "description": "Concentrated root development formula.",
     "price": 18.99,
     "image": "/products/root-booster-32oz.jpg",
     "active": true,
+    "featured": false,
     "sku": "NWS-32-ROOT"
   },
   {
+    "id": 8,
     "slug": "compost-tea-blend-1-gallon",
     "title": "Compost Tea Blend — 1 Gallon",
+    "subtitle": "Living soil amendment with beneficial bacteria.",
     "description": "Living soil amendment with beneficial bacteria.",
     "price": 26.99,
     "image": "/products/compost-tea-1gal.jpg",
     "active": true,
+    "featured": false,
     "sku": "NWS-128-TEA"
   },
   {
+    "id": 9,
     "slug": "organic-lawn-food-2-gallon",
     "title": "Organic Lawn Food — 2 Gallon",
+    "subtitle": "Slow-release nutrients for healthy grass.",
     "description": "Slow-release nutrients for healthy grass.",
     "price": 34.99,
     "image": "/products/lawn-food-2gal.jpg",
     "active": true,
+    "featured": false,
     "sku": "NWS-256-LAWN"
   },
   {
+    "id": 10,
     "slug": "soil-ph-balancer-16-oz",
     "title": "Soil pH Balancer — 16 oz",
+    "subtitle": "Natural pH adjustment for optimal plant growth.",
     "description": "Natural pH adjustment for optimal plant growth.",
     "price": 15.99,
     "image": "/products/ph-balancer-16oz.jpg",
     "active": true,
+    "featured": false,
     "sku": "NWS-16-PH"
   }
 ]
