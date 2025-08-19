@@ -1,62 +1,46 @@
+// /data/products.ts
+
 export type Product = {
-  slug: string;
-  title: string;
-  subtitle: string;
-  price: number;
-  image: string;
-  active: boolean;
-  sku?: string;
+  slug: string;        // URL/key, e.g. "liquid-kelp-1gal"
+  title: string;       // Display name
+  description?: string;
+  price: number;       // USD
+  image: string;       // Can be remote (add domain to next.config.js images.domains)
+  active: boolean;     // Hide/show in UI
+  sku: string;         // For Stripe / your cart
 };
 
+// Minimal sample data. Replace/add as needed.
 export const PRODUCTS: Product[] = [
   {
-    slug: "dog-urine-1gal",
-    title: "Dog Urine Neutralizer – 1 gal",
-    subtitle: "Pet-safe spot repair & odor control",
-    price: 39.99,
-    image: "https://m.media-amazon.com/images/I/61ll2EiLAJL._AC_UL320_.jpg",
-    active: true,
-    sku: "NWS-128-DU"
-  },
-  {
-    slug: "liquid-bone-meal-32oz",
-    title: "Liquid Bone Meal Fertilizer — 32 oz",
-    subtitle: "Fast phosphorus + calcium",
-    price: 24.99,
-    image: "https://m.media-amazon.com/images/I/615mJs9XccL._AC_UL320_.jpg",
-    active: true,
-    sku: "NWS-32-LBM"
-  },
-  {
-    slug: "liquid-kelp-32oz",
-    title: "Liquid Kelp Fertilizer — 32 oz",
-    subtitle: "Natural hormones & micros",
-    price: 24.99,
-    image: "https://m.media-amazon.com/images/I/510ui3CBLbL._AC_UL320_.jpg",
-    active: true,
-    sku: "NWS-32-LK"
-  },
-  {
-    slug: "hay-pasture-1gal",
-    title: "Hay & Pasture Liquid Fertilizer — 1 gal",
-    subtitle: "Horse-safe pasture nutrition",
-    price: 49.99,
+    slug: "organic-liquid-fertilizer-1gal",
+    title: "Nature's Way Soil Organic Liquid Fertilizer — 1 Gallon",
+    description: "Microbial-rich balanced fertilizer for gardens and lawns.",
+    price: 20.99,
     image: "https://m.media-amazon.com/images/I/718tWBNNfkL._AC_UL320_.jpg",
     active: true,
-    sku: "NWS-128-HP"
+    sku: "NWS-128-ORG"
+  },
+  {
+    slug: "tomato-liquid-fertilizer-1gal",
+    title: "Organic Tomato Liquid Fertilizer — 1 Gallon",
+    description: "Tomato-focused nutrients with beneficial microbes.",
+    price: 24.99,
+    image: "https://m.media-amazon.com/images/I/71yKQHf6cGL._AC_UL320_.jpg",
+    active: true,
+    sku: "NWS-128-TOM"
+  },
+  {
+    slug: "liquid-kelp-1gal",
+    title: "Liquid Kelp Fertilizer — 1 Gallon",
+    description: "Seaweed extract for root vigor and stress tolerance.",
+    price: 29.99,
+    image: "https://m.media-amazon.com/images/I/71J2xJtTAdL._AC_UL320_.jpg",
+    active: true,
+    sku: "NWS-128-KELP"
   }
 ];
 
-/**
- * Looks up a product by either SKU or slug (case-insensitive for SKU).
- * @param identifier SKU or slug of the product
- * @returns Product or undefined
- */
-export function getProduct(identifier: string): Product | undefined {
-  const id = identifier.toLowerCase();
-  return PRODUCTS.find(
-    p =>
-      (p.sku && p.sku.toLowerCase() === id) ||
-      p.slug === id
-  );
-}
+// Returns the product with the given slug, or null if it doesn't exist.
+export const getProduct = (slug: string): Product | null =>
+  PRODUCTS.find((p) => p.slug === slug) ?? null;
