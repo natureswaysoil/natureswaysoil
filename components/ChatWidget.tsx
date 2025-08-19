@@ -2,12 +2,20 @@
 'use client';
 
 import { useState, FormEvent } from 'react';
+type ChatMsg = { role: 'user' | 'assistant'; content: string };
+
 
 /** Chat message shape used everywhere in this file. */
 export type ChatMsg = {
   role: 'user' | 'assistant';
   content: string;
 };
+const userMsg: ChatMsg = { role: 'user', content: input.trim() };
+setMsgs(prev => [...prev, userMsg]);
+const botMsg: ChatMsg = { role: 'assistant', content: replyText };
+setMsgs(prev => [...prev, botMsg]);
+
+
 
 export default function ChatWidget() {
   const [msgs, setMsgs] = useState<ChatMsg[]>([]);
