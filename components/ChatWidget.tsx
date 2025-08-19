@@ -3,7 +3,6 @@
 
 import { useState, FormEvent } from 'react';
 
-/** Chat message shape used everywhere in this file. */
 type ChatMsg = { role: 'user' | 'assistant'; content: string };
 
 export default function ChatWidget() {
@@ -15,12 +14,10 @@ export default function ChatWidget() {
     const text = input.trim();
     if (!text) return;
 
-    // user message
     const user: ChatMsg = { role: 'user', content: text };
     setMsgs((m) => [...m, user]);
     setInput('');
 
-    // demo reply (replace with real API later)
     const reply: ChatMsg = { role: 'assistant', content: "Thanks! We'll be in touch." };
     setMsgs((m) => [...m, reply]);
   }
