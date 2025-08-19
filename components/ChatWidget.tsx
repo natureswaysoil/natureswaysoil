@@ -1,4 +1,3 @@
-
 import { useState, FormEvent } from 'react';
 
 // NOTE: renamed to avoid duplicate identifier errors
@@ -38,7 +37,6 @@ export default function ChatWidget() {
     }
   }
 
-  // …render code stays unchanged…
+  // Simple render - this can be styled later
+  return null;
 }
-
-

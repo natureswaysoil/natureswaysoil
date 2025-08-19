@@ -1,0 +1,11 @@
+Product ID,Title,Description,Selling Price,Active,SKU
+1,Nature's Way Soil Organic Liquid Fertilizer — 1 Gallon,Microbial-rich balanced fertilizer for gardens and lawns.,20.99,TRUE,NWS-128-ORG
+2,Organic Tomato Liquid Fertilizer — 1 Gallon,Tomato-focused nutrients with beneficial microbes.,24.99,TRUE,NWS-128-TOM
+3,Liquid Kelp Fertilizer — 1 Gallon,Seaweed extract for root vigor and stress tolerance.,29.99,TRUE,NWS-128-KELP
+4,Premium Soil Blend — 2 Cubic Feet,Biochar-enriched organic soil mix with mycorrhizae.,39.99,TRUE,NWS-CF2-PREM
+5,Worm Casting Fertilizer — 1 Gallon,Pure worm castings liquid for organic growing.,22.99,TRUE,NWS-128-WORM
+6,Root Booster Organic — 32 oz,Concentrated root development formula.,18.99,TRUE,NWS-32-ROOT
+7,Garden Starter Kit — Complete Set,Everything you need to start an organic garden.,49.99,FALSE,NWS-KIT-STRT
+8,Compost Tea Blend — 1 Gallon,Living soil amendment with beneficial bacteria.,26.99,TRUE,NWS-128-TEA
+9,Organic Lawn Food — 2 Gallon,Slow-release nutrients for healthy grass.,34.99,TRUE,NWS-256-LAWN
+10,Soil pH Balancer — 16 oz,Natural pH adjustment for optimal plant growth.,15.99,TRUE,NWS-16-PH
