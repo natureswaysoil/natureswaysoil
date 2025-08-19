@@ -1,0 +1,14 @@
+Product images for website mapping (in order matching CSV Product ID):
+
+1. /products/organic-liquid-1gal.jpg
+2. /products/tomato-1gal.jpg  
+3. /products/kelp-1gal.jpg
+4. /products/premium-soil-2cf.jpg
+5. /products/worm-casting-1gal.jpg
+6. /products/root-booster-32oz.jpg
+7. /products/starter-kit.jpg
+8. /products/compost-tea-1gal.jpg
+9. /products/lawn-food-2gal.jpg
+10. /products/ph-balancer-16oz.jpg
+
+Note: Products without images will use '/placeholder-product.png' as fallback.
