@@ -241,3 +241,33 @@ export default function CheckoutForm() {
     </div>
   );
 }
+
+
+import React, { useState } from 'react';
+
+const CheckoutForm = ({ onSubmit }: { onSubmit: (data: { name: string; email: string }) => void }) => {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+
+  return (
+    <form
+      onSubmit={e => {
+        e.preventDefault();
+        onSubmit({ name, email });
+      }}
+    >
+      <label>
+        Name
+        <input required value={name} onChange={e => setName(e.target.value)} />
+      </label>
+      <label>
+        Email
+        <input required type="email" value={email} onChange={e => setEmail(e.target.value)} />
+      </label>
+      {/* Add your cart and payment details here */}
+      <button type="submit">Continue to Payment</button>
+    </form>
+  );
+};
+
+export default CheckoutForm;
