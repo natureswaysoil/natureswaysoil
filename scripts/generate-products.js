@@ -48,12 +48,15 @@ function parseCSVProducts() {
         const image = imageMap[productId] || '/placeholder-product.svg';
         
         products.push({
+          id: productId,         // Include ID for backward compatibility
           slug,
           title,
-          description,
+          subtitle: description,  // Use description as subtitle for card display
+          description,           // Keep full description for detail pages
           price,
           image,
           active: true,
+          featured: productId <= 3, // Mark first 3 products as featured
           sku
         });
       }
