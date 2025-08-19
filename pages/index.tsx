@@ -3,9 +3,9 @@ import React, { useMemo, useState } from "react";
 import Head from "next/head";
 
 // IMPORTANT: keep these paths exactly as shown
-import { PRODUCTS, type Product } from "../lib/products";
+import { PRODUCTS, type Product } from "../data/products";
 import Cart, { type CartItem } from "../components/Cart";
-import ChatWidget from "../components/ChatWidget";
+import FloatingChat from "../components/FloatingChat";
 
 function dollars(cents: number) {
   return (cents / 100).toFixed(2);
@@ -32,7 +32,7 @@ export default function Home() {
         copy[idx] = { ...copy[idx], qty: copy[idx].qty + 1 };
         return copy;
       }
-      return [...prev, { id: p.id, name: p.name, price: p.price, qty: 1 }];
+      return [...prev, { id: p.id, name: p.title, price: Math.round(p.price * 100), qty: 1 }];
     });
     setCartOpen(true);
   }
@@ -129,7 +129,7 @@ export default function Home() {
                 <div className="aspect-[4/3] w-full overflow-hidden rounded-t-xl bg-neutral-50">
                   <img
                     src={p.image}
-                    alt={p.name}
+                    alt={p.title}
                     className="h-full w-full object-contain"
                     onError={(e) => {
                       (e.currentTarget as HTMLImageElement).src =
@@ -138,13 +138,13 @@ export default function Home() {
                   />
                 </div>
                 <div className="p-4">
-                  <h3 className="font-medium">{p.name}</h3>
-                  {!!p.subtitle && (
-                    <p className="mt-1 text-sm text-neutral-600">{p.subtitle}</p>
+                  <h3 className="font-medium">{p.title}</h3>
+                  {!!p.description && (
+                    <p className="mt-1 text-sm text-neutral-600">{p.description}</p>
                   )}
                   <div className="mt-4 flex items-center justify-between">
                     <span className="text-lg font-semibold">
-                      ${dollars(p.price)}
+                      ${p.price.toFixed(2)}
                     </span>
                     <button
                       onClick={() => addToCart(p)}
@@ -174,11 +174,14 @@ export default function Home() {
         open={cartOpen}
         onClose={() => setCartOpen(false)}
         items={items}
-        subtotal={subtotal}
-        updateQty={updateQty}
-        removeItem={remove}
+        onUpdateQty={updateQty}
+        onRemove={remove}
+        onCheckout={() => {
+          // Navigate to checkout or handle checkout logic
+          console.log("Checkout clicked");
+        }}
       />
-      <ChatWidget />
+      <FloatingChat />
     </>
   );
 }

@@ -42,7 +42,7 @@ export default function ProductDetail() {
 
         <div>
           <h1 className="text-3xl font-bold">{product.title}</h1>
-          {product.subtitle && <p className="mt-2 text-gray-600">{product.subtitle}</p>}
+          {product.description && <p className="mt-2 text-gray-600">{product.description}</p>}
           <p className="mt-4 text-2xl font-semibold">${product.price.toFixed(2)}</p>
 
           <div className="mt-6 flex items-center gap-3">
