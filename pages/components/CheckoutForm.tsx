@@ -90,7 +90,26 @@ function InnerCheckout({
     });
 
     if (error) {
-      setErr(error.message || 'Payment failed.');
+      // Provide more actionable error messages based on error type
+      let errorMessage = error.message || 'Payment failed.';
+      
+      if (error.code === 'card_declined') {
+        errorMessage = 'Your card was declined. Please try a different payment method or contact your bank.';
+      } else if (error.code === 'insufficient_funds') {
+        errorMessage = 'Insufficient funds. Please try a different payment method.';
+      } else if (error.code === 'invalid_number') {
+        errorMessage = 'Invalid card number. Please check your card details.';
+      } else if (error.code === 'invalid_expiry_month' || error.code === 'invalid_expiry_year') {
+        errorMessage = 'Invalid expiry date. Please check your card details.';
+      } else if (error.code === 'invalid_cvc') {
+        errorMessage = 'Invalid security code. Please check your card details.';
+      } else if (error.code === 'processing_error') {
+        errorMessage = 'Payment processing error. Please try again or contact support.';
+      } else if (error.code === 'rate_limit') {
+        errorMessage = 'Too many attempts. Please wait a moment and try again.';
+      }
+      
+      setErr(errorMessage);
       setBusy(false);
       return;
     }

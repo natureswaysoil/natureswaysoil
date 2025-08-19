@@ -64,7 +64,7 @@ export default function Shop() {
                 )}
                 <div className="mt-4 flex items-center justify-between">
                   <span className="text-lg font-semibold">
-                    ${dollars(p.price)}
+                    ${p.price.toFixed(2)}
                   </span>
                   <button
                     onClick={() => addToCart(p)}

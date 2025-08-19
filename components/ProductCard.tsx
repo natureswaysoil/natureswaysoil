@@ -1,23 +1,25 @@
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 import type { Product } from "../lib/products";
 
 type Props = { product: Product; onAdd?: (p: Product) => void };
 
 export default function ProductCard({ product, onAdd }: Props) {
+  const [imgSrc, setImgSrc] = useState(product.image || "/placeholder-product.png");
   const price = `$${product.price.toFixed(2)}`;
-  const img = product.image || "/logo-with-tagline.png";
 
   return (
     <div className="rounded-2xl border p-4 shadow-sm bg-white">
       <div className="relative w-full h-60 rounded-xl bg-white">
         <Image
-          src={img}
+          src={imgSrc}
           alt={product.title}
           fill
           sizes="(min-width:1024px) 300px, 45vw"
           className="object-contain rounded-xl"
           priority={false}
+          onError={() => setImgSrc("/placeholder-product.png")}
         />
       </div>
 

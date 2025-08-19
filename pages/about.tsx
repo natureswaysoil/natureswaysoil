@@ -1,8 +1,11 @@
 
 import Head from "next/head";
 import Image from "next/image";
+import { useState } from "react";
 
 export default function About(){
+  const [logoSrc, setLogoSrc] = useState("/images/logo-with-tagline.png");
+  
   return (
     <main className="min-h-screen bg-white text-gray-900">
       <Head>

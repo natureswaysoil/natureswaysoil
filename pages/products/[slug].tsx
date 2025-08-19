@@ -37,6 +37,9 @@ export default function ProductDetail() {
             src={product.image}     // e.g. "/products/dog-urine-1gal.jpg"
             alt={product.title}
             className="max-h-[28rem] object-contain p-4"
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).src = "/placeholder-product.png";
+            }}
           />
         </div>
 
