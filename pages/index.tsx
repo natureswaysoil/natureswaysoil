@@ -26,13 +26,13 @@ export default function Home() {
 
   function addToCart(p: Product) {
     setItems(prev => {
-      const idx = prev.findIndex(i => i.id === p.id);
+      const idx = prev.findIndex(i => i.id === p.id.toString());
       if (idx >= 0) {
         const copy = [...prev];
         copy[idx] = { ...copy[idx], qty: copy[idx].qty + 1 };
         return copy;
       }
-      return [...prev, { id: p.id, name: p.name, price: p.price, qty: 1 }];
+      return [...prev, { id: p.id.toString(), name: p.title, price: p.price * 100, qty: 1 }];
     });
     setCartOpen(true);
   }
@@ -129,7 +129,7 @@ export default function Home() {
                 <div className="aspect-[4/3] w-full overflow-hidden rounded-t-xl bg-neutral-50">
                   <img
                     src={p.image}
-                    alt={p.name}
+                    alt={p.title}
                     className="h-full w-full object-contain"
                     onError={(e) => {
                       (e.currentTarget as HTMLImageElement).src =
@@ -138,7 +138,7 @@ export default function Home() {
                   />
                 </div>
                 <div className="p-4">
-                  <h3 className="font-medium">{p.name}</h3>
+                  <h3 className="font-medium">{p.title}</h3>
                   {!!p.subtitle && (
                     <p className="mt-1 text-sm text-neutral-600">{p.subtitle}</p>
                   )}
@@ -174,9 +174,9 @@ export default function Home() {
         open={cartOpen}
         onClose={() => setCartOpen(false)}
         items={items}
-        subtotal={subtotal}
-        updateQty={updateQty}
-        removeItem={remove}
+        onUpdateQty={updateQty}
+        onRemove={remove}
+        onCheckout={() => window.location.href = '/checkout'}
       />
       <ChatWidget />
     </>
