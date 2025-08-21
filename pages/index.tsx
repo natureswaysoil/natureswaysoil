@@ -1,186 +1,96 @@
-// /pages/index.tsx
-import React, { useMemo, useState } from "react";
-import Head from "next/head";
 
-// IMPORTANT: keep these paths exactly as shown
-import { PRODUCTS, type Product } from "../data/products";
-import Cart, { type CartItem } from "../components/Cart";
-import ChatWidget from "../components/ChatWidget";
-
-function dollars(cents: number) {
-  return (cents / 100).toFixed(2);
-}
-
-export default function Home() {
-  const [cartOpen, setCartOpen] = useState(false);
-  const [items, setItems] = useState<CartItem[]>([]);
-
-  // --- Featured selection rules:
-  // 1) show products with featured === true & active === true
-  // 2) if none are flagged, fallback to the first 3 active products
-  const featured: Product[] = useMemo(() => {
-    const active = PRODUCTS.filter(p => p.active);
-    const flagged = active.filter(p => p.featured);
-    return (flagged.length ? flagged : active).slice(0, 3);
-  }, []);
-
-  function addToCart(p: Product) {
-    setItems(prev => {
-      const productId = (p.id ?? 0).toString();
-      const idx = prev.findIndex(i => i.id === productId);
-      if (idx >= 0) {
-        const copy = [...prev];
-        copy[idx] = { ...copy[idx], qty: copy[idx].qty + 1 };
-        return copy;
-      }
-      return [...prev, { id: productId, name: p.title, price: p.price * 100, qty: 1 }];
-    });
-    setCartOpen(true);
-  }
-
-  function updateQty(id: string, qty: number) {
-    setItems(prev =>
-      prev
-        .map(i => (i.id === id ? { ...i, qty: Math.max(1, qty) } : i))
-        .filter(i => i.qty > 0)
-    );
-  }
-
-  function remove(id: string) {
-    setItems(prev => prev.filter(i => i.id !== id));
-  }
-
-  const subtotal = useMemo(
-    () => items.reduce((sum, i) => sum + i.price * i.qty, 0),
-    [items]
-  );
-
-  return (
-    <>
-      <Head>
-        <title>Nature’s Way Soil — From our farm to your garden</title>
-        <meta
-          name="description"
-          content="Premium organic soil blends enriched with biochar, worm castings & mycorrhizae — made in the USA."
-        />
-      </Head>
-
-      {/* HERO */}
-      <header className="w-full bg-[#0f3d2e] text-white">
-        <div className="mx-auto max-w-6xl px-4 py-14 grid gap-8 md:grid-cols-2 items-center">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-semibold">
-              Nature’s Way Soil
-            </h1>
-            <p className="mt-3 text-white/80">
-              From our farm to your garden — premium organic soil blends
-              enriched with biochar, worm castings, & mycorrhizae.
-            </p>
-            <div className="mt-6 flex gap-3">
-              <a
-                href="#featured"
-                className="inline-flex items-center rounded-md bg-white px-4 py-2 text-[#0f3d2e] font-medium shadow"
-              >
-                View Featured
-              </a>
-              <a
-                href="/shop"
-                className="inline-flex items-center rounded-md border border-white/40 px-4 py-2 font-medium"
-              >
-                View All Products
-              </a>
-            </div>
-            <ul className="mt-6 grid gap-2 text-sm text-white/80">
-              <li>• Biochar for aeration & nutrient retention</li>
-              <li>• Worm castings for living biology</li>
-              <li>• Mycorrhizae to supercharge roots</li>
-            </ul>
-          </div>
-          <div className="justify-self-center">
-            {/* If you have a hero image: /public/soil-bag-hero.png */}
-            <img
-              src="/soil-bag-hero.png"
-              alt="Nature’s Way Soil"
-              className="w-full max-w-sm rounded-lg shadow-lg"
-              onError={(e) => {
-                // invisible fallback, keeps layout tidy if missing
-                (e.currentTarget as HTMLImageElement).style.opacity = "0";
-              }}
-            />
-          </div>
-        </div>
-      </header>
-
-      {/* FEATURED */}
-      <main className="mx-auto max-w-6xl px-4">
-        <section id="featured" className="py-12">
-          <div className="flex items-end justify-between">
-            <h2 className="text-2xl font-semibold">Featured</h2>
-            <a href="/shop" className="text-[#0f3d2e] hover:underline">
-              View all
-            </a>
-          </div>
-
-          <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {featured.map((p) => (
-              <article
-                key={p.slug}
-                className="rounded-xl border border-black/10 bg-white shadow-sm"
-              >
-                <div className="aspect-[4/3] w-full overflow-hidden rounded-t-xl bg-neutral-50">
-                  <img
-                    src={p.image}
-                    alt={p.title}
-                    className="h-full w-full object-contain"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src =
-                        "/placeholder-product.png";
-                    }}
-                  />
-                </div>
-                <div className="p-4">
-                  <h3 className="font-medium">{p.title}</h3>
-                  {!!p.subtitle && (
-                    <p className="mt-1 text-sm text-neutral-600">{p.subtitle}</p>
-                  )}
-                  <div className="mt-4 flex items-center justify-between">
-                    <span className="text-lg font-semibold">
-                      ${p.price.toFixed(2)}
-                    </span>
-                    <button
-                      onClick={() => addToCart(p)}
-                      className="rounded-md bg-[#0f3d2e] px-3 py-1.5 text-white"
-                    >
-                      Add to Cart
-                    </button>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
-
-          <div className="mt-8 text-center">
-            <a
-              href="/shop"
-              className="inline-flex items-center rounded-md border border-black/20 px-4 py-2"
-            >
-              Browse full catalog
-            </a>
-          </div>
-        </section>
-      </main>
-
-      {/* CART + CHAT */}
-      <Cart
-        open={cartOpen}
-        onClose={() => setCartOpen(false)}
-        items={items}
-        onUpdateQty={updateQty}
-        onRemove={remove}
-        onCheckout={() => window.location.href = '/checkout'}
-      />
-      <ChatWidget />
-    </>
-  );
-}
-
+ (cd "$(git rev-parse --show-toplevel)" && git apply --3way <<'EOF' 
+diff --git a/pages/index.tsx b/pages/index.tsx
+index 9df9f49b14ea868ebfc70e336ec87fc4d16a818f..0502609d544651c370b329e0d9e8072304881ca8 100644
+--- a/pages/index.tsx
++++ b/pages/index.tsx
+@@ -1,31 +1,65 @@
+ import Link from 'next/link';
+ import Image from 'next/image';
+ import { listProducts } from '@/lib/cart';
+ 
+ export default function Home() {
+   const products = listProducts();
+   return (
+-    <main className="p-8 grid gap-6 sm:grid-cols-2 md:grid-cols-3">
+-      {products.map((p) => (
+-        <div key={p.id} className="border rounded p-4 flex flex-col">
+-          <Image
+-            src={p.images[0] || '/placeholder-product.png'}
+-            alt={p.title}
+-            width={300}
+-            height={300}
+-            className="mb-2"
+-          />
+-          <h2 className="text-lg font-semibold mb-2">{p.title}</h2>
+-          <p className="flex-grow">{p.description}</p>
+-          <p className="mt-2 font-bold">${p.price.toFixed(2)}</p>
+-          <Link
+-            href={`/checkout?slug=${p.slug}&qty=1`}
+-            className="mt-4 inline-block bg-green-600 text-white px-3 py-1 rounded text-center"
+-          >
+-            Buy now
+-          </Link>
++    <>
++      <header className="p-4 flex flex-col items-center text-center">
++        <Image
++          src="/logo.png"
++          alt="Nature's Way Soil logo"
++          width={150}
++          height={150}
++          className="mb-4"
++        />
++        <div className="max-w-prose">
++          <h1 className="text-2xl font-bold mb-2">About Us – Nature’s Way Soil®</h1>
++          <p className="mb-2">
++            At Nature’s Way Soil, our mission is simple: to bring life back to the soil, naturally.
++          </p>
++          <p className="mb-2">
++            We’re a family-run farm that saw firsthand the damage years of synthetic fertilizers had done to the land. The soil was tired, lifeless, and unable to sustain the healthy crops and pastures we needed. Instead of following the same path, we set out to restore the earth the way nature intended—through biology, not chemistry.
++          </p>
++          <h2 className="text-xl font-semibold mb-1">Our Promise</h2>
++          <ul className="list-disc list-inside mb-2 text-left">
++            <li>Safe &amp; Natural – Every product we make is safe for children, pets, and pollinators.</li>
++            <li>🪱 Microbe-Rich Formulas – We use beneficial microbes, worm castings, biochar, and natural extracts to restore soil health.</li>
++            <li>Sustainable Farming – From duckweed to compost teas, our ingredients are chosen to recycle nutrients and heal the land.</li>
++            <li>Results You Can See – Greener lawns, healthier pastures, stronger roots, and thriving gardens—without synthetic chemicals.</li>
++          </ul>
++          <h2 className="text-xl font-semibold mb-1">Why We Do It</h2>
++          <p className="mb-2">
++            Soil isn’t just dirt—it’s a living ecosystem. By nurturing the microbes and natural processes in the ground, we create healthier plants, stronger food systems, and a cleaner environment for future generations.
++          </p>
++          <p>
++            Every bottle and bag of Nature’s Way Soil® carries this commitment: to restore the balance between people, plants, and the planet.
++          </p>
+         </div>
+-      ))}
+-    </main>
++      </header>
++      <main className="p-8 grid gap-6 sm:grid-cols-2 md:grid-cols-3">
++        {products.map((p) => (
++          <div key={p.id} className="border rounded p-4 flex flex-col">
++            <Image
++              src={p.images[0] || '/placeholder-product.png'}
++              alt={p.title}
++              width={300}
++              height={300}
++              className="mb-2"
++            />
++            <h2 className="text-lg font-semibold mb-2">{p.title}</h2>
++            <p className="flex-grow">{p.description}</p>
++            <p className="mt-2 font-bold">${p.price.toFixed(2)}</p>
++            <Link
++              href={`/checkout?slug=${p.slug}&qty=1`}
++              className="mt-4 inline-block bg-green-600 text-white px-3 py-1 rounded text-center"
++            >
++              Buy now
++            </Link>
++          </div>
++        ))}
++      </main>
++    </>
+   );
+ }
+ 
+EOF
+)
