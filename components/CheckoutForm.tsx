@@ -67,10 +67,19 @@ function InnerCheckout({ initialCart }: { initialCart: Cart }) {
       <aside className="md:col-span-2 p-5 border rounded-2xl h-fit">
         <h3 className="font-semibold">Order summary</h3>
         <ul className="mt-3 space-y-2">
-          {cart.items.map((it) => (
-            <li key={it.slug} className="flex justify-between text-sm">
+          {cart.items.map((it: any) => (
+            <li key={it.slug} className="flex justify-between items-center text-sm">
               <span>{it.title} × {it.qty}</span>
               <span>${(it.price * it.qty).toFixed(2)}</span>
+              <button
+                className="ml-2 px-2 py-1 rounded bg-red-600 text-white text-xs"
+                onClick={() => {
+                  setCart({
+                    ...cart,
+                    items: cart.items.filter((x: any) => x.slug !== it.slug)
+                  });
+                }}
+              >Remove</button>
             </li>
           ))}
         </ul>

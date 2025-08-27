@@ -1,17 +1,9 @@
- (cd "$(git rev-parse --show-toplevel)" && git apply --3way <<'EOF' 
-diff --git a/scripts/generate-products.js b/scripts/generate-products.js
-index 3b1069248d1ebb1f4f7a3cc772a7cd88918b353b..92bb915bce1bc7894e63e63c7a93616f2e0f79e3 100644
---- a/scripts/generate-products.js
-+++ b/scripts/generate-products.js
-@@ -1,31 +1,31 @@
- const fs = require('fs');
- const path = require('path');
- 
--const src = path.join(__dirname, '..', 'Products (10).csv');
-+const src = path.join(__dirname, '..', 'products.csv');
- const out = path.join(__dirname, '..', 'data', 'products.json');
--const imagesSrc = path.join(__dirname, '..', 'product images for website.txt');
-+const imagesSrc = path.join(__dirname, '..', 'product-images.txt');
+
+const fs = require('fs');
+const path = require('path');
+const src = path.join(__dirname, '..', 'products.csv');
+const out = path.join(__dirname, '..', 'data', 'products.json');
+const imagesSrc = path.join(__dirname, '..', 'product-images.txt');
  
  const raw = fs.readFileSync(src, 'utf8').trim();
  const lines = raw.split(/\r?\n/).slice(1); // skip header
@@ -34,9 +26,28 @@ index 3b1069248d1ebb1f4f7a3cc772a7cd88918b353b..92bb915bce1bc7894e63e63c7a93616f
    });
  }
  
- const products = lines.map((line) => {
-   const [id, title, description, price, active, sku] = line.split(',');
-   return {
- 
-EOF
-)
+const products = lines.map((line) => {
+  const [id, title, description, price, active, sku] = line.split(',');
+  // Remove quotes from title and sku
+  const cleanTitle = title.replace(/^"|"$/g, '');
+  const cleanSku = sku.replace(/^"|"$/g, '');
+  // Generate slug from title
+  const slug = cleanTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  // Use first image if available, else fallback to /products/{id}.jpg
+  const images = imageMap[Number(id)] || [];
+  const image = images.length > 0 ? images[0] : `/products/${id}.jpg`;
+  return {
+    id: Number(id),
+    title: cleanTitle,
+    description: description.replace(/^"|"$/g, ''),
+    price: Number(price),
+    active: active === 'true',
+    sku: cleanSku,
+    images,
+    slug,
+    image
+  };
+});
+
+fs.writeFileSync(out, JSON.stringify(products, null, 2));
+
