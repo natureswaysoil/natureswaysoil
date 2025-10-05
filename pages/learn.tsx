@@ -1,3 +1,4 @@
+
 import Head from "next/head";
 import Link from "next/link";
 import { useMemo, useState, useEffect } from "react";
@@ -20,7 +21,7 @@ const videos = [
     description:
       "Learn why dog urine burns grass and how our enzyme-based neutralizer combined with beneficial soil microbes helps yellow spots recover naturally. Safe for pets and children.",
     source: "youtube" as const,
-    id: "dQw4w9WgXcQ", // Replace with actual YouTube video ID
+    id: "PLACEHOLDER_VIDEO_1", // Replace with actual YouTube video ID
     productSlug: "nature-s-way-soil-dog-urine-neutralizer-lawn-revitalizer-32oz",
     uploadedAt: "2024-05-15",
     category: "Lawn Care",
@@ -31,7 +32,7 @@ const videos = [
     description:
       "Discover how cold-processed seaweed extract helps plants recover from drought and heat stress while providing essential micronutrients and natural growth hormones.",
     source: "youtube" as const,
-    id: "dQw4w9WgXcQ", // Replace with actual YouTube video ID
+    id: "PLACEHOLDER_VIDEO_2", // Replace with actual YouTube video ID
     productSlug: "nature-s-way-soil-liquid-kelp-fertilizer-32oz",
     uploadedAt: "2024-06-01",
     category: "Fertilizers",
@@ -42,7 +43,7 @@ const videos = [
     description:
       "Learn how Vitamin B1 and aloe vera in our organic tomato fertilizer promote strong root development and help transplants establish quickly without chemical stress.",
     source: "youtube" as const,
-    id: "dQw4w9WgXcQ", // Replace with actual YouTube video ID
+    id: "PLACEHOLDER_VIDEO_3", // Replace with actual YouTube video ID
     productSlug: "nature-s-way-soil-organic-tomato-liquid-fertilizer-1gal",
     uploadedAt: "2024-06-15",
     category: "Garden",
@@ -53,7 +54,7 @@ const videos = [
     description:
       "See how biochar and beneficial microbes improve forage vigor, nutrient uptake, and soil structure on pastures and hay fields. Pet-safe and environmentally friendly.",
     source: "youtube" as const,
-    id: "dQw4w9WgXcQ", // Replace with actual YouTube video ID
+    id: "PLACEHOLDER_VIDEO_4", // Replace with actual YouTube video ID
     productSlug: "nature-s-way-soil-hay-pasture-lawn-fertilizer-2-5gal",
     uploadedAt: "2024-07-01",
     category: "Pasture",
@@ -64,7 +65,7 @@ const videos = [
     description:
       "Understanding biochar's role in soil health: improved aeration, water retention, nutrient storage, and creating habitat for beneficial microorganisms.",
     source: "youtube" as const,
-    id: "dQw4w9WgXcQ", // Replace with actual YouTube video ID
+    id: "PLACEHOLDER_VIDEO_5", // Replace with actual YouTube video ID
     productSlug: "nature-s-way-soil-enhanced-living-compost",
     uploadedAt: "2024-07-20",
     category: "Soil Science",
@@ -81,13 +82,14 @@ function embedUrl(v: Vid) {
 
 function thumbUrl(v: Vid) {
   if ("thumb" in v && v.thumb) return v.thumb as string;
-  if (v.source === "youtube") return `https://img.youtube.com/vi/${v.id}/hqdefault.jpg`;
+  if (v.source === "youtube") return `https://i.ytimg.com/vi/_uVtcQdw1-I/maxresdefault.jpg`;
   return "";
 }
 
 export default function LearnPage() {
   const router = useRouter();
   const [activeKey, setActiveKey] = useState<string>(videos[0]?.key || "");
+  const [copySuccess, setCopySuccess] = useState(false);
   const active = useMemo(() => videos.find((x) => x.key === activeKey) || videos[0], [activeKey]);
 
   // Deep link: auto-select /learn?video=<key>
@@ -120,6 +122,33 @@ export default function LearnPage() {
   function selectVideo(key: string) {
     setActiveKey(key);
     router.push({ pathname: "/learn", query: { video: key } }, undefined, { shallow: true });
+  }
+
+  // Improved clipboard copy with temporary success message
+  function handleCopyLink() {
+    const url = typeof window !== "undefined" 
+      ? `${window.location.origin}/learn?video=${active.key}` 
+      : "";
+    if (url && navigator.clipboard) {
+      navigator.clipboard.writeText(url).then(() => {
+        setCopySuccess(true);
+        setTimeout(() => setCopySuccess(false), 2000);
+      }).catch(() => {
+        // Fallback for older browsers
+        const textArea = document.createElement("textarea");
+        textArea.value = url;
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+          document.execCommand('copy');
+          setCopySuccess(true);
+          setTimeout(() => setCopySuccess(false), 2000);
+        } catch (err) {
+          console.error('Failed to copy:', err);
+        }
+        document.body.removeChild(textArea);
+      });
+    }
   }
 
   // Group videos by category
@@ -229,20 +258,19 @@ export default function LearnPage() {
                 >
                   All Products
                 </Link>
-                <button
-                  onClick={() => {
-                    const url = typeof window !== "undefined" 
-                      ? `${window.location.origin}/learn?video=${active.key}` 
-                      : "";
-                    if (url && navigator.clipboard) {
-                      navigator.clipboard.writeText(url);
-                      alert("Link copied to clipboard!");
-                    }
-                  }}
-                  className="px-6 py-3 rounded-lg border-2 border-gray-300 hover:border-gray-400 transition font-semibold"
-                >
-                  📋 Copy Link
-                </button>
+                <div className="relative">
+                  <button
+                    onClick={handleCopyLink}
+                    className="px-6 py-3 rounded-lg border-2 border-gray-300 hover:border-gray-400 transition font-semibold"
+                  >
+                    📋 Copy Link
+                  </button>
+                  {copySuccess && (
+                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-1 bg-green-600 text-white text-sm rounded shadow-lg whitespace-nowrap">
+                      ✓ Link copied!
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -274,8 +302,28 @@ export default function LearnPage() {
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="font-semibold text-sm mb-1 line-clamp-2">{v.title}</div>
-                      <div className="text-xs text-gray-600 line-clamp-2">{v.description}</div>
+                      <div 
+                        className="font-semibold text-sm mb-1"
+                        style={{
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden'
+                        }}
+                      >
+                        {v.title}
+                      </div>
+                      <div 
+                        className="text-xs text-gray-600"
+                        style={{
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden'
+                        }}
+                      >
+                        {v.description}
+                      </div>
                       {v.category && (
                         <span className="inline-block mt-1 px-2 py-0.5 bg-gray-100 text-gray-700 text-xs rounded">
                           {v.category}

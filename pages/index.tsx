@@ -1,5 +1,6 @@
+
 // /pages/index.tsx
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import Head from "next/head";
 import Link from "next/link";
 
@@ -7,6 +8,7 @@ import Link from "next/link";
 import { PRODUCTS, type Product } from "../data/products";
 import Cart, { type CartItem } from "../components/Cart";
 import ChatWidget from "../components/ChatWidget";
+import { addToCart as addToCartStore, readCart, onCartChange } from "@/lib/cart-store";
 
 function dollars(cents: number) {
   return (cents / 100).toFixed(2);
@@ -15,6 +17,13 @@ function dollars(cents: number) {
 export default function Home() {
   const [cartOpen, setCartOpen] = useState(false);
   const [items, setItems] = useState<CartItem[]>([]);
+
+  // Sync with shared cart store
+  useEffect(() => {
+    setItems(readCart());
+    const unsub = onCartChange(() => setItems(readCart()));
+    return unsub;
+  }, []);
 
   // --- Featured selection rules:
   // 1) show products with featured === true & active === true
@@ -26,29 +35,30 @@ export default function Home() {
   }, []);
 
   function addToCart(p: Product) {
-    setItems(prev => {
-      const productId = (p.id ?? 0).toString();
-      const idx = prev.findIndex(i => i.id === productId);
-      if (idx >= 0) {
-        const copy = [...prev];
-        copy[idx] = { ...copy[idx], qty: copy[idx].qty + 1 };
-        return copy;
-      }
-      return [...prev, { id: productId, name: p.title, price: p.price * 100, qty: 1 }];
+    // Use shared cart store instead of local state
+    addToCartStore({
+      slug: p.slug,
+      title: p.title,
+      price: p.price,
+      qty: 1,
+      sku: p.sku
     });
     setCartOpen(true);
   }
 
-  function updateQty(id: string, qty: number) {
-    setItems(prev =>
-      prev
-        .map(i => (i.id === id ? { ...i, qty: Math.max(1, qty) } : i))
-        .filter(i => i.qty > 0)
-    );
+  function updateQty(slug: string, qty: number) {
+    // This will be handled by the Cart component using cart-store functions
+    const items = readCart();
+    const item = items.find(i => i.slug === slug);
+    if (item) {
+      const { setQuantity } = require("@/lib/cart-store");
+      setQuantity(slug, qty);
+    }
   }
 
-  function remove(id: string) {
-    setItems(prev => prev.filter(i => i.id !== id));
+  function remove(slug: string) {
+    const { removeFromCart } = require("@/lib/cart-store");
+    removeFromCart(slug);
   }
 
   const subtotal = useMemo(
@@ -166,7 +176,17 @@ export default function Home() {
                 <div className="p-5">
                   <h3 className="font-semibold text-lg mb-2">{p.title}</h3>
                   {!!p.description && (
-                    <p className="text-sm text-gray-600 mb-4 line-clamp-2">{p.description}</p>
+                    <p 
+                      className="text-sm text-gray-600 mb-4"
+                      style={{
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden'
+                      }}
+                    >
+                      {p.description}
+                    </p>
                   )}
                   <div className="flex items-center justify-between">
                     <span className="text-2xl font-bold text-[#0f3d2e]">
