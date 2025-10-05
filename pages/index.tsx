@@ -1,155 +1,284 @@
-import Link from 'next/link';
-import { listProducts } from '@/lib/cart';
-import { addToCart, removeFromCart } from '@/lib/cart-store';
-import { useState } from 'react';
-function Navigation() {
-  return (
-    <nav className="bg-green-900 text-white px-4 py-3 flex justify-between items-center">
-      <div className="flex items-center gap-2">
-        <img src="/logo.png" alt="Nature's Way Soil" width={40} height={40} className="rounded-full" />
-        <span className="font-bold text-lg">Nature's Way Soil</span>
-      </div>
-      <ul className="flex gap-6 text-sm">
-        <li><Link href="/shop" className="hover:underline">Shop</Link></li>
-        <li><Link href="/about" className="hover:underline">About</Link></li>
-        <li><Link href="/contact" className="hover:underline">Contact</Link></li>
-        <li><Link href="/cart" className="hover:underline">Cart</Link></li>
-      </ul>
-    </nav>
-  );
-}
+// /pages/index.tsx
+import React, { useMemo, useState } from "react";
+import Head from "next/head";
+import Link from "next/link";
 
-function HeroSection() {
-  return (
-    <section className="bg-green-50 py-10 px-4 text-center flex flex-col items-center">
-      <img src="/logo.png" alt="Nature's Way Soil logo" width={120} height={120} className="mb-4" />
-      <h1 className="text-3xl font-bold mb-2">Bring Life Back to Your Soil</h1>
-      <p className="max-w-xl mb-4 text-gray-700">
-        Premium organic soil blends, fertilizers, and amendments made with biochar, worm castings, and living microbes. Safe for children, pets, and pollinators.
-      </p>
-      <Link href="/shop" className="bg-green-700 text-white px-6 py-2 rounded-lg font-semibold shadow hover:bg-green-800">Shop Now</Link>
-    </section>
-  );
-}
+// IMPORTANT: keep these paths exactly as shown
+import { PRODUCTS, type Product } from "../data/products";
+import Cart, { type CartItem } from "../components/Cart";
+import ChatWidget from "../components/ChatWidget";
 
-function PolicyLinks() {
-  return (
-    <div className="flex flex-wrap gap-4 justify-center mt-8 text-xs text-gray-600">
-      <Link href="/policies/privacy" className="hover:text-green-700">Privacy Policy</Link>
-      <Link href="/policies/terms" className="hover:text-green-700">Terms of Service</Link>
-      <Link href="/policies/shipping" className="hover:text-green-700">Shipping Policy</Link>
-      <Link href="/policies/returns" className="hover:text-green-700">Refund Policy</Link>
-    </div>
-  );
+function dollars(cents: number) {
+  return (cents / 100).toFixed(2);
 }
 
 export default function Home() {
-  const products = listProducts().filter((p) => p.featured);
-  const [cartItems, setCartItems] = useState<string[]>([]);
+  const [cartOpen, setCartOpen] = useState(false);
+  const [items, setItems] = useState<CartItem[]>([]);
 
-  function handleAddToCart(product: { slug: string }) {
-    const prod = listProducts().find((p) => p.slug === product.slug);
-    if (!prod) return;
-    addToCart({ slug: prod.slug, title: prod.title, price: prod.price, qty: 1 });
-    setCartItems([...cartItems, prod.slug]);
-  }
+  // --- Featured selection rules:
+  // 1) show products with featured === true & active === true
+  // 2) if none are flagged, fallback to the first 3 active products
+  const featured: Product[] = useMemo(() => {
+    const active = PRODUCTS.filter(p => p.active);
+    const flagged = active.filter(p => p.featured);
+    return (flagged.length ? flagged : active).slice(0, 3);
+  }, []);
 
-  function handleRemoveFromCart(product: { slug: string }) {
-    removeFromCart(product.slug);
-    setCartItems(cartItems.filter((slug) => slug !== product.slug));
-  }
-
-  async function handleBuy(product: { slug: string }) {
-    // Redirect to Stripe checkout API
-    const res = await fetch('/api/stripe/create-intent', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ cart: [{ slug: product.slug, qty: 1 }] })
+  function addToCart(p: Product) {
+    setItems(prev => {
+      const productId = (p.id ?? 0).toString();
+      const idx = prev.findIndex(i => i.id === productId);
+      if (idx >= 0) {
+        const copy = [...prev];
+        copy[idx] = { ...copy[idx], qty: copy[idx].qty + 1 };
+        return copy;
+      }
+      return [...prev, { id: productId, name: p.title, price: p.price * 100, qty: 1 }];
     });
-    const { url } = await res.json();
-    window.location.href = url;
+    setCartOpen(true);
   }
 
-  // Cart summary logic
-  const cartSummary = cartItems.length > 0 ? (
-    <aside className="mb-8 p-4 border rounded-xl bg-gray-50">
-      <h3 className="font-bold mb-2">Cart Summary</h3>
-      <ul className="mb-2">
-        {cartItems.map((slug) => {
-          const prod = products.find((p) => p.slug === slug);
-          if (!prod) return null;
-          return (
-            <li key={slug} className="flex justify-between items-center mb-2">
-              <span>{prod.title}</span>
-              <button
-                onClick={() => handleRemoveFromCart(prod)}
-                className="ml-2 px-2 py-1 rounded bg-red-600 text-white text-xs"
-              >Remove</button>
-            </li>
-          );
-        })}
-      </ul>
-      <button
-        onClick={() => window.location.href = '/checkout'}
-        className="px-4 py-2 rounded bg-green-700 text-white font-semibold"
-      >Go to Checkout</button>
-    </aside>
-  ) : null;
+  function updateQty(id: string, qty: number) {
+    setItems(prev =>
+      prev
+        .map(i => (i.id === id ? { ...i, qty: Math.max(1, qty) } : i))
+        .filter(i => i.qty > 0)
+    );
+  }
+
+  function remove(id: string) {
+    setItems(prev => prev.filter(i => i.id !== id));
+  }
+
+  const subtotal = useMemo(
+    () => items.reduce((sum, i) => sum + i.price * i.qty, 0),
+    [items]
+  );
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Navigation />
-      <HeroSection />
-      <main className="flex-1 p-8">
-        {cartSummary}
-        <h2 className="text-2xl font-bold mb-6 text-center">Featured Products</h2>
-        <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-3">
-          {products.map((p) => (
-            <div key={p.id} className="border rounded-2xl p-4 flex flex-col bg-white shadow hover:shadow-lg transition">
-              <div className="relative w-full h-60 rounded-xl bg-gray-50 mb-2">
-                <img
-                  src={p.image ? p.image : '/placeholder-product.svg'}
-                  alt={p.title}
-                  style={{objectFit: 'contain', borderRadius: '0.75rem', width: '100%', height: '240px', background: '#f8fafc'}}
-                />
-              </div>
-              <h3 className="text-lg font-semibold mb-1">{p.title}</h3>
-              <p className="text-sm text-gray-600 mb-2">{p.subtitle || p.description}</p>
-              <div className="font-bold text-green-700 mb-2">${p.price.toFixed(2)}</div>
-              <div className="flex gap-2 mt-2">
-                <button
-                  onClick={() => handleAddToCart(p)}
-                  className="px-3 py-2 rounded-xl bg-green-700 text-white hover:bg-green-800"
-                  aria-label={`Add ${p.title} to cart`}
-                >
-                  Add to Cart
-                </button>
-                <button
-                  onClick={() => { handleAddToCart(p); window.location.href = '/checkout'; }}
-                  className="px-3 py-2 rounded-xl bg-green-600 text-white hover:bg-green-700"
-                  aria-label={`Buy ${p.title}`}
-                >
-                  Buy Now
-                </button>
-              </div>
-              <Link
-                href={`/products/${p.slug}`}
-                className="mt-2 px-3 py-2 rounded-xl border bg-green-50 hover:bg-green-100 text-green-900 font-semibold text-center"
-                aria-label={`View details for ${p.title}`}
+    <>
+      <Head>
+        <title>Nature's Way Soil — From our farm to your garden</title>
+        <meta
+          name="description"
+          content="Premium organic soil blends enriched with biochar, worm castings & mycorrhizae — made in the USA."
+        />
+      </Head>
+
+      {/* HERO SECTION - Enhanced with better styling */}
+      <header className="w-full bg-gradient-to-br from-[#0f3d2e] to-[#1a5c42] text-white relative overflow-hidden">
+        <div className="mx-auto max-w-6xl px-4 py-16 grid gap-8 md:grid-cols-2 items-center relative z-10">
+          <div>
+            <h1 className="text-4xl md:text-5xl font-bold mb-4">
+              Nature's Way Soil
+            </h1>
+            <p className="text-xl mb-2 text-white/90">
+              Bring Life Back to Your Soil
+            </p>
+            <p className="text-lg text-white/80 mb-6">
+              Premium organic soil blends, fertilizers, and amendments made with biochar, 
+              worm castings, and living microbes. Safe for children, pets, and pollinators.
+            </p>
+            <div className="flex flex-wrap gap-3 mb-6">
+              <a
+                href="#featured"
+                className="inline-flex items-center rounded-lg bg-white px-6 py-3 text-[#0f3d2e] font-semibold shadow-lg hover:shadow-xl transition"
               >
-                Details
+                View Featured Products
+              </a>
+              <Link
+                href="/shop"
+                className="inline-flex items-center rounded-lg border-2 border-white/60 px-6 py-3 font-semibold hover:bg-white/10 transition"
+              >
+                Shop All Products
               </Link>
             </div>
-          ))}
+            <ul className="grid gap-2 text-white/90">
+              <li className="flex items-start gap-2">
+                <span className="text-green-300">✓</span>
+                <span>Biochar for aeration & nutrient retention</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-green-300">✓</span>
+                <span>Worm castings for living biology</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-green-300">✓</span>
+                <span>Mycorrhizae to supercharge roots</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-green-300">✓</span>
+                <span>Made in the USA on our family farm</span>
+              </li>
+            </ul>
+          </div>
+          <div className="justify-self-center">
+            <img
+              src="/logo.png"
+              alt="Nature's Way Soil"
+              className="w-full max-w-sm rounded-lg shadow-2xl"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).style.opacity = "0.3";
+              }}
+            />
+          </div>
         </div>
-        <PolicyLinks />
+        {/* Decorative background pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute inset-0" style={{
+            backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)',
+            backgroundSize: '40px 40px'
+          }}></div>
+        </div>
+      </header>
+
+      {/* FEATURED PRODUCTS */}
+      <main className="mx-auto max-w-6xl px-4">
+        <section id="featured" className="py-12">
+          <div className="flex items-end justify-between mb-8">
+            <div>
+              <h2 className="text-3xl font-bold text-gray-900">Featured Products</h2>
+              <p className="text-gray-600 mt-2">Our most popular organic soil solutions</p>
+            </div>
+            <Link href="/shop" className="text-[#0f3d2e] hover:underline font-semibold">
+              View all →
+            </Link>
+          </div>
+
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {featured.map((p) => (
+              <article
+                key={p.slug}
+                className="rounded-xl border border-gray-200 bg-white shadow-sm hover:shadow-lg transition-shadow"
+              >
+                <div className="aspect-[4/3] w-full overflow-hidden rounded-t-xl bg-gray-50">
+                  <img
+                    src={p.image}
+                    alt={p.title}
+                    className="h-full w-full object-contain p-4"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src =
+                        "/placeholder-product.svg";
+                    }}
+                  />
+                </div>
+                <div className="p-5">
+                  <h3 className="font-semibold text-lg mb-2">{p.title}</h3>
+                  {!!p.description && (
+                    <p className="text-sm text-gray-600 mb-4 line-clamp-2">{p.description}</p>
+                  )}
+                  <div className="flex items-center justify-between">
+                    <span className="text-2xl font-bold text-[#0f3d2e]">
+                      ${p.price.toFixed(2)}
+                    </span>
+                    <button
+                      onClick={() => addToCart(p)}
+                      className="rounded-lg bg-[#0f3d2e] px-4 py-2 text-white font-semibold hover:bg-[#1a5c42] transition"
+                    >
+                      Add to Cart
+                    </button>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+
+          <div className="mt-10 text-center">
+            <Link
+              href="/shop"
+              className="inline-flex items-center rounded-lg border-2 border-gray-300 px-6 py-3 font-semibold hover:border-[#0f3d2e] hover:text-[#0f3d2e] transition"
+            >
+              Browse Full Catalog →
+            </Link>
+          </div>
+        </section>
+
+        {/* WHY CHOOSE US */}
+        <section className="py-12 border-t">
+          <h2 className="text-3xl font-bold text-center mb-10">Why Choose Nature's Way Soil?</h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-3xl">🌱</span>
+              </div>
+              <h3 className="font-semibold text-xl mb-2">100% Organic</h3>
+              <p className="text-gray-600">
+                No synthetic chemicals. Just pure, natural ingredients that work with nature.
+              </p>
+            </div>
+            <div className="text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-3xl">🐾</span>
+              </div>
+              <h3 className="font-semibold text-xl mb-2">Pet & Kid Safe</h3>
+              <p className="text-gray-600">
+                Safe for your family, pets, and pollinators when used as directed.
+              </p>
+            </div>
+            <div className="text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-3xl">🚜</span>
+              </div>
+              <h3 className="font-semibold text-xl mb-2">Family Farm</h3>
+              <p className="text-gray-600">
+                Made in the USA on our family farm with care and expertise.
+              </p>
+            </div>
+          </div>
+        </section>
       </main>
-      <footer className="border-t bg-white mt-8">
-        <div className="mx-auto max-w-6xl px-4 py-6 text-sm text-gray-600 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p>&copy; {new Date().getFullYear()} Nature’s Way Soil</p>
-          <PolicyLinks />
+
+      {/* FOOTER */}
+      <footer className="border-t bg-gray-50 mt-12">
+        <div className="mx-auto max-w-6xl px-4 py-8">
+          <div className="grid md:grid-cols-4 gap-8 mb-8">
+            <div>
+              <h4 className="font-semibold mb-3">Shop</h4>
+              <ul className="space-y-2 text-sm text-gray-600">
+                <li><Link href="/shop" className="hover:text-[#0f3d2e]">All Products</Link></li>
+                <li><Link href="/shop" className="hover:text-[#0f3d2e]">Featured</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-3">Learn</h4>
+              <ul className="space-y-2 text-sm text-gray-600">
+                <li><Link href="/learn" className="hover:text-[#0f3d2e]">Educational Videos</Link></li>
+                <li><Link href="/about" className="hover:text-[#0f3d2e]">About Us</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-3">Support</h4>
+              <ul className="space-y-2 text-sm text-gray-600">
+                <li><Link href="/contact" className="hover:text-[#0f3d2e]">Contact Us</Link></li>
+                <li><Link href="/policies/shipping" className="hover:text-[#0f3d2e]">Shipping</Link></li>
+                <li><Link href="/policies/returns" className="hover:text-[#0f3d2e]">Returns</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-3">Legal</h4>
+              <ul className="space-y-2 text-sm text-gray-600">
+                <li><Link href="/policies/privacy" className="hover:text-[#0f3d2e]">Privacy Policy</Link></li>
+                <li><Link href="/policies/terms" className="hover:text-[#0f3d2e]">Terms of Service</Link></li>
+              </ul>
+            </div>
+          </div>
+          <div className="border-t pt-6 text-center text-sm text-gray-600">
+            <p>&copy; {new Date().getFullYear()} Nature's Way Soil. All rights reserved.</p>
+          </div>
         </div>
       </footer>
-    </div>
+
+      {/* CART + CHAT */}
+      <Cart
+        open={cartOpen}
+        onClose={() => setCartOpen(false)}
+        items={items}
+        onUpdateQty={updateQty}
+        onRemove={remove}
+        onCheckout={() => window.location.href = '/checkout'}
+      />
+      <ChatWidget />
+    </>
   );
 }
