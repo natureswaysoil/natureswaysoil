@@ -5,9 +5,9 @@ import Head from "next/head";
 import Link from "next/link";
 
 // IMPORTANT: keep these paths exactly as shown
-import { PRODUCTS, type Product } from "../data/products";
-import Cart, { type CartItem } from "../components/Cart";
-import ChatWidget from "../components/ChatWidget";
+import { PRODUCTS, type Product } from "@/data/products";
+import Cart, { type CartItem } from "@/components/Cart";
+import ChatWidget from "@/components/ChatWidget";
 import { addToCart as addToCartStore, readCart, onCartChange } from "@/lib/cart-store";
 
 function dollars(cents: number) {
@@ -20,8 +20,26 @@ export default function Home() {
 
   // Sync with shared cart store
   useEffect(() => {
-    setItems(readCart());
-    const unsub = onCartChange(() => setItems(readCart()));
+    const cartItems = readCart();
+    // Map cart-store items to Cart component format
+    const mappedItems = cartItems.map(item => ({
+      id: item.slug,
+      name: item.title,
+      price: item.price,
+      qty: item.qty
+    }));
+    setItems(mappedItems);
+    
+    const unsub = onCartChange(() => {
+      const cartItems = readCart();
+      const mappedItems = cartItems.map(item => ({
+        id: item.slug,
+        name: item.title,
+        price: item.price,
+        qty: item.qty
+      }));
+      setItems(mappedItems);
+    });
     return unsub;
   }, []);
 
@@ -78,6 +96,21 @@ export default function Home() {
 
       {/* HERO SECTION - Enhanced with better styling */}
       <header className="w-full bg-gradient-to-br from-[#0f3d2e] to-[#1a5c42] text-white relative overflow-hidden">
+        {/* Hero Background Video */}
+        <div className="absolute inset-0 w-full h-full overflow-hidden">
+          <video
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover opacity-30"
+            style={{ pointerEvents: 'none' }}
+          >
+            <source src="https://video.pictory.ai/20251005232653546b1d31054cfaf4b53a5bcd69b75790ef2/20251005234145374VOVQHL5UUwmevS4" type="video/mp4" />
+          </video>
+          {/* Dark overlay for better text readability */}
+          <div className="absolute inset-0 bg-black/20"></div>
+        </div>
         <div className="mx-auto max-w-6xl px-4 py-16 grid gap-8 md:grid-cols-2 items-center relative z-10">
           <div>
             <h1 className="text-4xl md:text-5xl font-bold mb-4">

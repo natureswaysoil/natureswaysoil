@@ -3,9 +3,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "npm run generate-products && next build",
-    "start": "next start",
-    "generate-products": "node scripts/generate-products.js"
+    "build": "next build",
+    "start": "next start"
   },
   "dependencies": {
     "@stripe/react-stripe-js": "^2.6.0",
